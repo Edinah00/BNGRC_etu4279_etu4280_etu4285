@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Objets</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        pre { background: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test API - Création d'objet</h1>
+    
+    <button onclick="testCreate()">Tester POST /api/mes-objets</button>
+    
+    <h2>Résultat :</h2>
+    <div id="status"></div>
+    <pre id="result"></pre>
+
+    <script>
+        async function testCreate() {
+            const statusDiv = document.getElementById('status');
+            const resultPre = document.getElementById('result');
+            
+            statusDiv.innerHTML = '⏳ Envoi de la requête...';
+            resultPre.textContent = '';
+
+            try {
+                const payload = new URLSearchParams();
+                payload.set('titre', 'Test Objet ' + Date.now());
+                payload.set('description', 'Description de test');
+                payload.set('categorie_id', '1');
+                payload.set('prix', '5000');
+
+                console.log('Envoi de:', payload.toString());
+
+                const response = await fetch('/api/mes-objets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: payload.toString()
+                });
+
+                const statusCode = response.status;
+                const contentType = response.headers.get('content-type');
+                const rawText = await response.text();
+
+                let output = `Status: ${statusCode}\n`;
+                output += `Content-Type: ${contentType}\n\n`;
+                output += `=== RÉPONSE BRUTE ===\n${rawText}\n\n`;
+
+                // Essayer de parser en JSON
+                try {
+                    const json = JSON.parse(rawText);
+                    output += `=== JSON PARSÉ ===\n${JSON.stringify(json, null, 2)}`;
+                    
+                    if (json.success) {
+                        statusDiv.innerHTML = '<span class="success">✅ SUCCÈS !</span>';
+                    } else {
+                        statusDiv.innerHTML = '<span class="error">❌ Échec: ' + json.message + '</span>';
+                    }
+                } catch (e) {
+                    output += `=== ERREUR DE PARSING JSON ===\n${e.message}\n\n`;
+                    output += `Premier caractère: "${rawText.charAt(0)}" (code: ${rawText.charCodeAt(0)})`;
+                    statusDiv.innerHTML = '<span class="error">❌ La réponse n\'est pas du JSON valide !</span>';
+                }
+
+                resultPre.textContent = output;
+
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="error">❌ Erreur réseau</span>';
+                resultPre.textContent = 'Erreur: ' + error.message;
+            }
+        }
+
+        // Test automatique au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Page chargée. Cliquez sur le bouton pour tester.');
+        });
+    </script>
+</body>
+</html>

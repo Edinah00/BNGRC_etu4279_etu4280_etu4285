@@ -1,0 +1,10 @@
+{
+  "require": {
+    "flight/flight": "^2.0"
+  },
+  "autoload": {
+    "classmap": [
+      "app/"
+    ]
+  }
+}
