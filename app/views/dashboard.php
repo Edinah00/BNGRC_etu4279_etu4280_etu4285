@@ -11,6 +11,7 @@
 </head>
 <body>
     <div class="app-container">
+<<<<<<< HEAD
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
@@ -34,6 +35,12 @@
                 </ul>
             </nav>
         </aside>
+=======
+        <?php
+        $activePage = 'dashboard';
+        include __DIR__ . '/model.php';
+        ?>
+>>>>>>> 3fc11238d619a49a69302c59abc0a0c58136e172
 
         <main class="main-content" id="dashboard">
             <header class="page-header">
