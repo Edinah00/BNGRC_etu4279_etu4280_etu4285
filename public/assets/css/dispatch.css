@@ -1,0 +1,440 @@
+/* ============================================
+   BNGRC Dispatch - Additional Styles
+   ============================================ */
+
+/* Import base styles from dashboard.css */
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: var(--gradient-primary);
+    color: var(--color-light);
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-family: var(--font-primary);
+    font-size: 0.938rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-success {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: linear-gradient(135deg, #27AE60 0%, #229954 100%);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-primary);
+    font-size: 0.938rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(39, 174, 96, 0.3);
+}
+
+.btn-icon-left {
+    flex-shrink: 0;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.empty-state {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.empty-state-card {
+    background: var(--gradient-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-2xl);
+    margin-bottom: var(--spacing-xl);
+    transition: all var(--transition-base);
+}
+
+.empty-state-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-2xl) 0;
+}
+
+.empty-state-icon {
+    color: var(--color-secondary);
+    opacity: 0.3;
+    margin-bottom: var(--spacing-xl);
+    animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.empty-state-title {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-sm);
+    letter-spacing: -0.3px;
+}
+
+.empty-state-text {
+    font-size: 0.938rem;
+    color: var(--color-secondary);
+    opacity: 0.7;
+    max-width: 500px;
+}
+
+/* ============================================
+   No Results State
+   ============================================ */
+
+.no-results-state {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.no-results-card {
+    background: var(--gradient-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-2xl);
+    margin-bottom: var(--spacing-xl);
+    border-left: 4px solid #F39C12;
+}
+
+.no-results-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-2xl) 0;
+}
+
+.no-results-icon {
+    color: #F39C12;
+    opacity: 0.6;
+    margin-bottom: var(--spacing-xl);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.no-results-title {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-sm);
+    letter-spacing: -0.3px;
+}
+
+.no-results-text {
+    font-size: 0.938rem;
+    color: var(--color-secondary);
+    opacity: 0.7;
+    max-width: 500px;
+}
+
+/* ============================================
+   Simulation Results
+   ============================================ */
+
+.simulation-results {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.results-card {
+    background: var(--gradient-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.results-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-xl);
+    border-bottom: 2px solid var(--color-light);
+    background: linear-gradient(135deg, rgba(12, 43, 78, 0.03) 0%, rgba(29, 84, 108, 0.03) 100%);
+}
+
+.results-title {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: -0.3px;
+}
+
+.results-table-container {
+    overflow-x: auto;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.results-table thead {
+    background: linear-gradient(135deg, rgba(12, 43, 78, 0.05) 0%, rgba(29, 84, 108, 0.05) 100%);
+}
+
+.results-table th {
+    padding: var(--spacing-lg);
+    text-align: left;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid var(--color-tertiary);
+}
+
+.results-table tbody tr {
+    transition: all var(--transition-fast);
+    position: relative;
+    animation: slideInRow 0.4s ease-out backwards;
+}
+
+.results-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.results-table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.results-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.results-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.results-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+.results-table tbody tr:nth-child(6) { animation-delay: 0.3s; }
+.results-table tbody tr:nth-child(7) { animation-delay: 0.35s; }
+.results-table tbody tr:nth-child(8) { animation-delay: 0.4s; }
+.results-table tbody tr:nth-child(9) { animation-delay: 0.45s; }
+.results-table tbody tr:nth-child(10) { animation-delay: 0.5s; }
+
+@keyframes slideInRow {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.results-table tbody tr::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(12, 43, 78, 0.08);
+}
+
+.results-table tbody tr:hover {
+    background: rgba(29, 84, 108, 0.04);
+}
+
+.results-table td {
+    padding: var(--spacing-lg);
+    color: var(--color-secondary);
+    font-size: 0.938rem;
+}
+
+.results-table td:first-child {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+/* Badge Styling */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.813rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    background: linear-gradient(135deg, rgba(26, 61, 100, 0.1) 0%, rgba(29, 84, 108, 0.15) 100%);
+    color: var(--color-secondary);
+    border: 1px solid rgba(26, 61, 100, 0.2);
+}
+
+/* ============================================
+   Toast Notification
+   ============================================ */
+
+.toast {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    right: var(--spacing-xl);
+    background: linear-gradient(135deg, #27AE60 0%, #229954 100%);
+    color: white;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 8px 32px rgba(39, 174, 96, 0.3);
+    z-index: 9999;
+    transform: translateY(150%);
+    transition: transform var(--transition-base);
+}
+
+.toast.show {
+    transform: translateY(0);
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.toast-icon {
+    flex-shrink: 0;
+}
+
+.toast-text {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.toast-description {
+    font-size: 0.875rem;
+    opacity: 0.95;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+    .btn-primary {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .results-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-md);
+    }
+
+    .btn-success {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .empty-state-card,
+    .no-results-card {
+        padding: var(--spacing-lg);
+    }
+
+    .empty-state-content,
+    .no-results-content {
+        padding: var(--spacing-lg) 0;
+    }
+
+    .toast {
+        bottom: var(--spacing-md);
+        right: var(--spacing-md);
+        left: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .empty-state-title,
+    .no-results-title,
+    .results-title {
+        font-size: 1.125rem;
+    }
+
+    .results-table-container {
+        overflow-x: scroll;
+    }
+}
