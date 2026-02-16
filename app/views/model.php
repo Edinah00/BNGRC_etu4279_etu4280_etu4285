@@ -42,6 +42,12 @@ $menuItems = [
         'icon' => '<rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>',
     ],
     [
+        'key' => 'achats',
+        'label' => 'Achats',
+        'href' => '/achats',
+        'icon' => '<circle cx="9" cy="20" r="1"></circle><circle cx="20" cy="20" r="1"></circle><path d="M1 1h4l2.7 12.8a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.7l1.2-6.7H6"></path>',
+    ],
+    [
         'key' => 'rapport',
         'label' => 'Rapport',
         'href' => '/rapport',

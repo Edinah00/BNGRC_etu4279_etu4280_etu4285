@@ -6,16 +6,19 @@ require_once __DIR__ . '/../models/RegionsModel.php';
 require_once __DIR__ . '/../models/VillesModel.php';
 require_once __DIR__ . '/../models/BesoinsModel.php';
 require_once __DIR__ . '/../models/DonsModel.php';
+require_once __DIR__ . '/../models/AchatsModel.php';
 
 require_once __DIR__ . '/../controllers/RegionsController.php';
 require_once __DIR__ . '/../controllers/VillesController.php';
 require_once __DIR__ . '/../controllers/BesoinsController.php';
 require_once __DIR__ . '/../controllers/DonsController.php';
+require_once __DIR__ . '/../controllers/AchatsController.php';
 
 $router->get('/regions', [new RegionsController(), 'index']);
 $router->get('/villes', [new VillesController(), 'index']);
 $router->get('/besoins', [new BesoinsController(), 'index']);
 $router->get('/dons', [new DonsController(), 'index']);
+$router->get('/achats', [new AchatsController(), 'index']);
 
 $router->get('/api/regions', [new RegionsController(), 'apiList']);
 $router->post('/api/regions', [new RegionsController(), 'apiCreate']);
@@ -37,3 +40,6 @@ $router->post('/api/dons', [new DonsController(), 'apiCreate']);
 $router->put('/api/dons/@id:[0-9]+', [new DonsController(), 'apiUpdate']);
 $router->delete('/api/dons/@id:[0-9]+', [new DonsController(), 'apiDelete']);
 
+$router->get('/api/achats', [new AchatsController(), 'apiList']);
+$router->post('/api/achats', [new AchatsController(), 'apiCreate']);
+$router->put('/api/achats/configuration/frais', [new AchatsController(), 'apiUpdateFeeRate']);

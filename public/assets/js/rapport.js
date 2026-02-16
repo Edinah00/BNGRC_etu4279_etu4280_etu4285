@@ -17,6 +17,7 @@ let chartInstances = {
     globalDistribution: null,
     regional: null
 };
+let isRefreshing = false;
 
 // ============================================
 // API Client
@@ -167,32 +168,47 @@ function renderSummaryCards(summaryData) {
         {
             name: 'Besoins totaux',
             value: summaryData.besoins_totaux || 0,
-            index: 1
+            icon: '📋',
+            color: '#0C2B4E'
         },
         {
-            name: 'Dons reçus',
-            value: summaryData.dons_recus || 0,
-            index: 2
-        },
-        {
-            name: 'Distribués',
-            value: summaryData.distribues || 0,
-            index: 3
+            name: 'Besoins satisfaits',
+            value: summaryData.satisfaits || 0,
+            icon: '✅',
+            color: '#27AE60',
+            subtitle: `Distributions: ${formatNumber(summaryData.distribues || 0)} Ar<br>Achats: ${formatNumber(summaryData.achats || 0)} Ar`
         },
         {
             name: 'Restants',
             value: summaryData.restants || 0,
-            index: 4
+            icon: '⏳',
+            color: '#E74C3C',
+            percentage: summaryData.taux_satisfaction || 0
         }
     ];
     
     const cardsHTML = cards.map(card => `
-        <div class="summary-card">
-            <p class="summary-label">${escapeHtml(card.name)}</p>
-            <p class="summary-value">
-                ${formatNumber(card.value)}
-                <span class="summary-unit">Ar</span>
-            </p>
+        <div class="summary-card" style="border-left: 4px solid ${card.color};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="text-align: left; width: 100%;">
+                    <p class="summary-label">${card.icon} ${escapeHtml(card.name)}</p>
+                    <p class="summary-value" style="color: ${card.color};">
+                        ${formatNumber(card.value)}
+                        <span class="summary-unit">Ar</span>
+                    </p>
+                    ${card.subtitle ? `<p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">${card.subtitle}</p>` : ''}
+                    ${card.percentage !== undefined ? `
+                        <div style="margin-top: 0.75rem;">
+                            <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                                <div style="width: ${Math.max(0, Math.min(100, Number(card.percentage) || 0))}%; height: 100%; background: ${card.color}; transition: width 0.5s ease;"></div>
+                            </div>
+                            <p style="font-size: 0.8rem; color: #6c757d; margin-top: 0.25rem;">
+                                Taux de satisfaction: ${(Number(card.percentage) || 0).toFixed(1)}%
+                            </p>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
         </div>
     `).join('');
     
@@ -527,6 +543,51 @@ function showLoading() {
     }
 }
 
+function updateLastUpdateTime() {
+    const lastUpdateEl = document.getElementById('lastUpdateTime');
+    if (!lastUpdateEl) return;
+
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    lastUpdateEl.textContent = `${hh}:${mm}:${ss}`;
+}
+
+async function refreshRapport() {
+    if (isRefreshing) return;
+
+    const refreshBtn = document.getElementById('refreshButton');
+
+    try {
+        isRefreshing = true;
+        if (refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('loading');
+        }
+
+        const data = await RapportAPI.fetchAll();
+        if (!data) {
+            throw new Error('Aucune donnée reçue');
+        }
+
+        renderSummaryCards(data.summary || {});
+        renderTypeComparisonChart(data.by_type || []);
+        renderGlobalDistributionChart(data.summary || {});
+        renderRegionalChart(data.by_region || []);
+        updateLastUpdateTime();
+    } catch (error) {
+        console.error('Erreur refreshRapport:', error);
+        showError('Impossible d actualiser les donnees du rapport.');
+    } finally {
+        isRefreshing = false;
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('loading');
+        }
+    }
+}
+
 // ============================================
 // Mobile Menu Toggle
 // ============================================
@@ -573,6 +634,7 @@ async function initRapport() {
         renderTypeComparisonChart(data.by_type || []);
         renderGlobalDistributionChart(data.summary || {});
         renderRegionalChart(data.by_region || []);
+        updateLastUpdateTime();
         
         console.log('✅ BNGRC Rapport initialized successfully');
         console.log(`📈 Summary loaded:`, data.summary);
@@ -602,6 +664,7 @@ if (document.readyState === 'loading') {
 
 window.BNGRCRapport = {
     API: RapportAPI,
+    refreshRapport,
     renderSummaryCards,
     renderTypeComparisonChart,
     renderGlobalDistributionChart,
@@ -609,3 +672,5 @@ window.BNGRCRapport = {
     formatNumber,
     escapeHtml
 };
+
+window.refreshRapport = refreshRapport;

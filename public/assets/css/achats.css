@@ -1,0 +1,123 @@
+.purchase-top-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stats-card {
+    background: #fff;
+    border: 1px solid #e3e8ef;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.stats-card h2 {
+    margin: 0 0 0.75rem;
+    color: #0c2b4e;
+    font-size: 1.1rem;
+}
+
+.kpi-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.kpi-row:last-child {
+    border-bottom: none;
+}
+
+.kpi-row strong {
+    color: #0c2b4e;
+}
+
+.config-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.config-row input {
+    border: 1px solid #d7dfe9;
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+}
+
+.hint {
+    margin: 0.7rem 0 0;
+    color: #607285;
+    font-size: 0.9rem;
+}
+
+.achats-filters {
+    margin-bottom: 1rem;
+}
+
+.table-title {
+    font-weight: 600;
+    color: #0c2b4e;
+    margin-bottom: 0.6rem;
+}
+
+.buy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.buy-actions input {
+    width: 120px;
+    border: 1px solid #d7dfe9;
+    border-radius: 6px;
+    padding: 0.35rem 0.45rem;
+}
+
+.blocked-msg {
+    color: #b02a37;
+    font-weight: 600;
+    font-size: 0.87rem;
+}
+
+.warning-msg {
+    color: #9a6700;
+    font-weight: 600;
+    font-size: 0.87rem;
+}
+
+.history-section {
+    margin-top: 1.2rem;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.7rem;
+}
+
+.history-header h2 {
+    margin: 0;
+    color: #0c2b4e;
+    font-size: 1.1rem;
+}
+
+.summary-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 0.8rem;
+}
+
+.summary-strip > div {
+    background: #f7f9fc;
+    border: 1px solid #e3e8ef;
+    border-radius: 10px;
+    padding: 0.65rem;
+    color: #28435f;
+}

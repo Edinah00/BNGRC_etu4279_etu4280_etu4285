@@ -38,6 +38,22 @@
                 </div>
             </header>
 
+            <div class="recap-header">
+                <div>
+                    <h2 class="recap-title">Recapitulatif financier</h2>
+                    <p class="recap-subtitle">
+                        Derniere mise a jour : <span id="lastUpdateTime">--:--:--</span>
+                    </p>
+                </div>
+                <button id="refreshButton" class="btn-refresh" type="button" onclick="refreshRapport()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Actualiser
+                </button>
+            </div>
+
             <!-- Summary Cards -->
             <section class="summary-grid" id="summaryCards">
                 <!-- Summary cards will be dynamically inserted here -->

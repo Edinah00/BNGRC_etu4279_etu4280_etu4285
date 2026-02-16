@@ -5,6 +5,87 @@
 /* Import base styles from dashboard.css */
 
 /* ============================================
+   Recap Header & Refresh
+   ============================================ */
+
+.recap-header {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.recap-title {
+    margin: 0;
+    color: #0C2B4E;
+    font-size: 1.5rem;
+    font-family: var(--font-display);
+}
+
+.recap-subtitle {
+    margin: 0.25rem 0 0;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+#lastUpdateTime {
+    font-weight: 600;
+    color: #0C2B4E;
+}
+
+.btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #0C2B4E 0%, #1A3D64 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(12, 43, 78, 0.15);
+}
+
+.btn-refresh:hover {
+    background: linear-gradient(135deg, #1A3D64 0%, #0C2B4E 100%);
+    box-shadow: 0 4px 12px rgba(12, 43, 78, 0.25);
+    transform: translateY(-2px);
+}
+
+.btn-refresh:active {
+    transform: translateY(0);
+}
+
+.btn-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-refresh svg {
+    transition: transform 0.6s ease;
+}
+
+.btn-refresh.loading svg {
+    animation: rotate-refresh 1s linear infinite;
+}
+
+@keyframes rotate-refresh {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
    Summary Grid
    ============================================ */
 

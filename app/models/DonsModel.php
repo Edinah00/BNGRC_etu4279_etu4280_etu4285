@@ -31,7 +31,7 @@ class DonsModel
 
     public function types(): array
     {
-        $stmt = $this->db->query('SELECT id_type AS id, libelle FROM type_besoin ORDER BY libelle ASC');
+        $stmt = $this->db->query('SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC');
         return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
     }
 

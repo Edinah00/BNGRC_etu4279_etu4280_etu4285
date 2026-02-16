@@ -29,12 +29,12 @@ class RapportModel
     public function getSummary(): array
     {
         try {
-            // Calcul des besoins totaux
+            // 1. Calcul des besoins totaux
             $besoinsQuery = "SELECT COALESCE(SUM(quantite * prix_unitaire), 0) AS total FROM besoin";
             $besoinsStmt = $this->db->query($besoinsQuery);
             $totalBesoins = (float) $besoinsStmt->fetchColumn();
 
-            // Calcul des dons reçus (basé sur le prix moyen des besoins par type)
+            // 2. Calcul des dons reçus (basé sur le prix moyen des besoins par type)
             $donsQuery = <<<SQL
                 SELECT COALESCE(SUM(d.quantite * COALESCE(p.prix_moyen, 0)), 0) AS total
                 FROM don d
@@ -47,7 +47,7 @@ SQL;
             $donsStmt = $this->db->query($donsQuery);
             $totalDons = (float) $donsStmt->fetchColumn();
 
-            // Calcul des distributions effectuées
+            // 3. Calcul des distributions effectuées
             $distributionsQuery = <<<SQL
                 SELECT COALESCE(SUM(dist.quantite_attribuee * COALESCE(p.prix_moyen, 0)), 0) AS total
                 FROM distribution dist
@@ -61,15 +61,25 @@ SQL;
             $distributionsStmt = $this->db->query($distributionsQuery);
             $totalDistribue = (float) $distributionsStmt->fetchColumn();
 
-            // Calcul des besoins restants
-            $restant = max(0, $totalBesoins - $totalDistribue);
+            // 4. Calcul des achats effectués (montant HT)
+            $achatsQuery = "SELECT COALESCE(SUM(montant_ht), 0) AS total FROM achat";
+            $achatsStmt = $this->db->query($achatsQuery);
+            $totalAchats = (float) $achatsStmt->fetchColumn();
+
+            // 5. Total satisfait = distributions + achats
+            $totalSatisfait = $totalDistribue + $totalAchats;
+
+            // 6. Calcul des besoins restants
+            $restant = max(0, $totalBesoins - $totalSatisfait);
 
             return [
                 'besoins_totaux' => $totalBesoins,
                 'dons_recus' => $totalDons,
                 'distribues' => $totalDistribue,
+                'achats' => $totalAchats,
+                'satisfaits' => $totalSatisfait,
                 'restants' => $restant,
-                'taux_satisfaction' => $totalBesoins > 0 ? ($totalDistribue / $totalBesoins) * 100 : 0
+                'taux_satisfaction' => $totalBesoins > 0 ? ($totalSatisfait / $totalBesoins) * 100 : 0
             ];
         } catch (PDOException $e) {
             error_log("Erreur getSummary: " . $e->getMessage());
@@ -77,6 +87,8 @@ SQL;
                 'besoins_totaux' => 0,
                 'dons_recus' => 0,
                 'distribues' => 0,
+                'achats' => 0,
+                'satisfaits' => 0,
                 'restants' => 0,
                 'taux_satisfaction' => 0
             ];

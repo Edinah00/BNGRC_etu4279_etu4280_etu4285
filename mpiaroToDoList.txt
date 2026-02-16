@@ -1,0 +1,28 @@
+[OK] Ajout de la table configuration pour stocker le taux de frais d'achat.
+[OK] Ajout de la table achat pour enregistrer les achats avec HT, frais et TTC.
+[OK] Ajout d'index SQL pour accélérer les recherches sur les achats.
+[OK] Ajout de la valeur par défaut du taux de frais d'achat (10%).
+[OK] Ajout de la vue besoins_achetables pour voir les besoins restants.
+[OK] Ajout de la fonction SQL don_existe_pour_type pour verifier les dons restants.
+[OK] Ajout du trigger SQL before_achat_insert pour bloquer les achats invalides.
+[OK] Mise a jour du script conception.sql pour inclure achat/configuration dans le reset et les donnees.
+
+[OK] Ajout du modele AchatsModel pour la logique metier des achats.
+[OK] Ajout du calcul de l'argent disponible (dons argent - achats TTC).
+[OK] Ajout de la validation serveur avant achat (type, quantite, dons existants, budget).
+[OK] Ajout de la creation d'achat en transaction SQL.
+[OK] Ajout de la gestion de l'historique des achats.
+[OK] Ajout de la gestion du taux de frais configurable.
+
+[OK] Ajout du controleur AchatsController pour la page et les APIs achats.
+[OK] Ajout de la route page /achats.
+[OK] Ajout de l'API GET /api/achats.
+[OK] Ajout de l'API POST /api/achats.
+[OK] Ajout de l'API PUT /api/achats/configuration/frais.
+
+[OK] Ajout de la vue achats.php (liste besoins, achat, historique, configuration frais).
+[OK] Ajout du script frontend achats.js (chargement, filtres, achat, historique, frais).
+[OK] Ajout du style achats.css pour l'interface achats.
+[OK] Ajout de l'entree "Achats" dans le menu lateral.
+
+[OK] Verification syntaxique PHP des nouveaux fichiers et routes modifiees.
