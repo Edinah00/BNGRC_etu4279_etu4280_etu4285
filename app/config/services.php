@@ -66,7 +66,7 @@ Debugger::enable(); // Auto-detects environment
 // Debugger::enable('23.75.345.200'); // Restrict debug bar to specific IPs
 Debugger::$logDirectory = __DIR__ . $ds . '..' . $ds . 'log'; // Log directory
 Debugger::$strictMode = true; // Show all errors (set to E_ALL & ~E_DEPRECATED for less noise)
-// Empêche l'injection de HTML (debug bar) dans les réponses API JSON.
+// Empêche l'injection de HTML (debu5432g bar) dans les réponses API JSON.
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
 if (str_starts_with($requestUri, '/api/') || str_contains($acceptHeader, 'application/json')) {
@@ -83,13 +83,15 @@ if (Debugger::$showBar === true && php_sapi_name() !== 'cli') {
 /**********************************************
  *           Database Service Setup           *
  **********************************************/
-// Uncomment and configure the following for your database:
+$driver = $config['database']['driver'] ?? 'mysql';
 
-// MySQL Example:
-$dsn = 'pgsql:host=' . $config['database']['host'] . ';dbname=' . $config['database']['dbname'];
-
-// SQLite Example:
-// $dsn = 'sqlite:' . $config['database']['file_path'];
+if ($driver === 'pgsql') {
+	$dsn = 'pgsql:host=' . $config['database']['host'] . ';dbname=' . $config['database']['dbname'];
+} elseif ($driver === 'sqlite') {
+	$dsn = 'sqlite:' . $config['database']['file_path'];
+} else {
+	$dsn = 'mysql:host=' . $config['database']['host'] . ';dbname=' . $config['database']['dbname'] . ';charset=utf8mb4';
+}
 
 // Register Flight::db() service
 // In development, use PdoQueryCapture to log queries; in production, use PdoWrapper for performance.
