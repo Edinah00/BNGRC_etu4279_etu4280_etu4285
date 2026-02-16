@@ -1,24 +1,79 @@
+TO DO LISTE - EDINAH (Dashboard BNGRC)
+
+Ce qu'on a fait jusque la :
+
+[✓] 1) Verifier le probleme du dashboard
+- On a identifie que le style ne s'affichait pas et que les donnees ne chargeaient pas.
+- Duree: ~10 min
+
+[✓] 2) Nettoyer la vue dashboard
+- Correction de la structure HTML et des liens CSS/JS.
+- Duree: ~10 min
+
+[✓] 3) Supprimer le mock JavaScript
+- Le dashboard n'utilise plus les donnees statiques mockees.
+- Duree: ~5 min
+
+[✓] 4) Creer une API dashboard dynamique
+- Ajout de /api/dashboard avec des requetes SQL (stats, tableau, graphiques).
+- Duree: ~5 min
+
+[✓] 5) Connecter le frontend a l'API
+- Le fichier dashboard.js fait maintenant un fetch sur /api/dashboard.
+- Duree: ~5 min
+
+[✓] 6) Corriger la configuration base de donnees
+- Passage en MySQL dans services.php + config alignee.
+- Duree: ~10 min
+
+[✓] 7) Restaurer le CSS dashboard
+- Le fichier dashboard.css a ete remis en place pour retrouver le bon rendu.
+- Duree: ~5 min
+
+[✓] 8) Verifier la syntaxe des fichiers
+- Controle PHP/JS apres modifications.
+- Duree: ~5 min
+
+[✓] 9) Passer en structure MVC (plus propre)
+- Creation de DashboardController + DashboardModel.
+- Duree: ~15 min
+
+[✓] 10) Simplifier les routes dashboard
+- Les routes appellent maintenant le controller.
+- Duree: ~5 min
+
+[✓] 11) Re-test rapide apres refactor
+- Verification syntaxe + coherence globale.
+- Duree: ~5 min
+
+[✓] 12) Ajouter toutes les pages en mode dynamique (sans mock)
+- Pages branchees: regions, villes, besoins, dons, rapport.
+- Duree: ~45 min
+
+[✓] 13) Mettre en place MVC pour chaque nouvelle page
+- Ajout des modeles + controllers + routes API + vues PHP.
+- Duree: ~55 min
+
+[✓] 14) Deplacer les assets JS/CSS dans public/assets
+- JS et CSS separes de views pour une structure propre.
+- Duree: ~20 min
+
+[✓] 15) Correction finale navigation + petits bugs d'affichage
+- Ajustement des liens et coherence des colonnes dons.
+- Duree: ~15 min
 
 [✓] 16) Sidebar commun pour toutes les entites
 - Creation de app/views/model.php pour centraliser les liens (dashboard, regions, villes, besoins, dons, rapport).
 - Inclusion dans chaque vue avec la page active.
 - Duree: ~15 min
 
-Petit mot humain:
-- Maintenant, si on ajoute une nouvelle page, on modifie le menu a un seul endroit.
-
 [✓] 17) Liens CRUD dans le sidebar commun (model.php)
 - Ajout des liens Lister / Ajouter / Modifier-Supprimer pour regions, villes, besoins, dons.
 - Ouverture auto du modal en mode ajout via ?action=create.
 - Duree: ~12 min
-
-Petit mot humain:
-- Le menu est plus pratique maintenant: tu peux aller direct sur l'action CRUD voulue.
 
 [✓] 18) Simplifier le menu sidebar
 - Un seul lien par entite (sans detail CRUD): Regions, Villes, Besoins, Dons.
 - Les actions CRUD restent dans chaque page entite.
 - Duree: ~5 min
 
-Petit mot humain:
-- Menu plus lisible, moins charge, plus facile pour naviguer vite.

@@ -6,19 +6,16 @@ require_once __DIR__ . '/../models/RegionsModel.php';
 require_once __DIR__ . '/../models/VillesModel.php';
 require_once __DIR__ . '/../models/BesoinsModel.php';
 require_once __DIR__ . '/../models/DonsModel.php';
-require_once __DIR__ . '/../models/RapportModel.php';
 
 require_once __DIR__ . '/../controllers/RegionsController.php';
 require_once __DIR__ . '/../controllers/VillesController.php';
 require_once __DIR__ . '/../controllers/BesoinsController.php';
 require_once __DIR__ . '/../controllers/DonsController.php';
-require_once __DIR__ . '/../controllers/RapportController.php';
 
 $router->get('/regions', [new RegionsController(), 'index']);
 $router->get('/villes', [new VillesController(), 'index']);
 $router->get('/besoins', [new BesoinsController(), 'index']);
 $router->get('/dons', [new DonsController(), 'index']);
-$router->get('/rapport', [new RapportController(), 'index']);
 
 $router->get('/api/regions', [new RegionsController(), 'apiList']);
 $router->post('/api/regions', [new RegionsController(), 'apiCreate']);
