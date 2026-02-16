@@ -83,7 +83,6 @@ Ce qu'on a fait jusque la :
 - Le hash ne s'affiche plus dans la page.
 - Duree: ~3 min
 
-Petit mot humain:
 - C'etait un conflit non resolu, pas une erreur de base de donnees.
 
 [✓] 20) Nettoyage global des conflits Git
@@ -91,13 +90,10 @@ Petit mot humain:
 - Verification globale des marqueurs sur le projet et check syntaxe PHP.
 - Duree: ~6 min
 
-Petit mot humain:
-- Le projet est propre cote conflits, tu peux continuer sans pollution de merge.
+- Le projet est propre cote conflits
 
 [✓] 21) Refaire model.php au style du sidebar rapport
 - Sidebar commun avec icones et structure visuelle propre.
 - Liens reels uniquement: /dashboard, /regions, /villes, /besoins, /dons, /rapport.
 - Duree: ~8 min
 
-Petit mot humain:
-- La navigation est maintenant jolie + coherente sur toutes les pages.
