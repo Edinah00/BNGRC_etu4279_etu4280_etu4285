@@ -11,27 +11,10 @@
 </head>
 <body>
     <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-badge">B</div>
-                    <div class="logo-text">
-                        <h1>BNGRC</h1>
-                        <p>Gestion des dons</p>
-                    </div>
-                </div>
-            </div>
-
-            <nav class="sidebar-nav">
-                <p class="nav-label">NAVIGATION</p>
-                <ul class="nav-list">
-                    <li class="nav-item"><a href="#dashboard" class="nav-link"><span>Dashboard</span></a></li>
-                    <li class="nav-item"><a href="#stats" class="nav-link"><span>Statistiques</span></a></li>
-                    <li class="nav-item"><a href="#charts" class="nav-link"><span>Graphiques</span></a></li>
-                    <li class="nav-item"><a href="#table" class="nav-link"><span>Villes</span></a></li>
-                </ul>
-            </nav>
-        </aside>
+        <?php
+        $activePage = 'dashboard';
+        include __DIR__ . '/model.php';
+        ?>
 
         <main class="main-content" id="dashboard">
             <header class="page-header">
