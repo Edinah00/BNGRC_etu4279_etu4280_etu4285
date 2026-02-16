@@ -1,0 +1,41 @@
+TO DO LISTE - EDINAH (Dashboard BNGRC)
+
+Ce qu'on a fait jusque là :
+
+[✓] 1) Vérifier le problème du dashboard
+- On a identifié que le style ne s'affichait pas et que les données ne chargeaient pas.
+- Durée: ~10 min
+
+[✓] 2) Nettoyer la vue dashboard
+- Correction de la structure HTML et des liens CSS/JS.
+- Durée: ~10 min
+
+[✓] 3) Supprimer le mock JavaScript (template manko )
+- Le dashboard n'utilise plus les données statiques mockées.
+- Durée: ~5 min
+
+[✓] 4) Créer une API dashboard dynamique
+- Ajout de /api/dashboard avec des requêtes SQL (stats, tableau, graphiques).
+- Durée: ~5 min
+
+[✓] 5) Connecter le frontend à l'API
+- Le fichier dashboard.js fait maintenant un fetch sur /api/dashboard.
+- Durée: ~5 min
+
+[✓] 6) Corriger la configuration base de données
+- Passage en MySQL dans services.php + config alignée.
+- Durée: ~10 min
+
+[✓] 7) Restaurer le CSS dashboard
+- Le fichier dashboard.css a été remis en place pour retrouver le bon rendu.
+- Durée: ~5 min
+
+[✓] 8) Vérifier la syntaxe des fichiers
+- Contrôle PHP/JS après modifications.
+- Durée: ~5 min
+
+Temps total approximatif: ~55 min
+
+Prochaines  actions (optionnel):
+[ ] Tester avec tes vraies données (vérifier les chiffres affichés)
+[ ] Faire une sauvegarde Git propre des fichiers dashboard
