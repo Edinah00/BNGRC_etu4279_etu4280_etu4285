@@ -4,13 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BNGRC - Dispatch</title>
+    <link rel="stylesheet" href="/assets/css/dashboard.css">
     <link rel="stylesheet" href="/assets/css/dispatch.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <main class="main-content" style="max-width:1200px;margin:0 auto;padding:2rem 1rem;">
+    <div class="app-container">
+        <?php
+        $activePage = 'dispatch';
+        include __DIR__ . '/model.php';
+        ?>
+
+    <main class="main-content" style="max-width:1200px;padding:2rem 1rem;">
         <header class="page-header">
             <div class="header-content" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
                 <div class="header-text">
@@ -81,6 +88,7 @@
             </div>
         </div>
     </main>
+    </div>
 
     <script src="/assets/js/dispatch.js"></script>
 </body>

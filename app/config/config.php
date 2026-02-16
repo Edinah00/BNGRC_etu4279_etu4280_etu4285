@@ -63,7 +63,9 @@ return [
 	/**************************************
 	 *         Database Settings          *
 	 **************************************/
-	'database' => [
+	 'database' => [
+		'driver'   => 'mysql',
+
 		// MySQL Example:
 		 'host'     => '127.0.0.1',      // Database host (e.g., 'localhost', 'db.example.com')
 		 'dbname'   => 'bngrc',   // Database name (e.g., 'flightphp')

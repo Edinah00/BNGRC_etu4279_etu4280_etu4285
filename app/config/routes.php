@@ -1,5 +1,4 @@
 <?php
-
 $routeFiles = [
     'auth_route.php',
     'list_route.php',
@@ -15,3 +14,7 @@ foreach ($routeFiles as $routeFile) {
         require_once $fullPath;
     }
 }
+
+require_once __DIR__ . '/dashboard_route.php';
+require_once __DIR__ . '/rapport_route.php';
+require_once __DIR__ . '/entities_route.php';

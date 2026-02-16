@@ -9,6 +9,12 @@ $router->group('', function (Router $router) {
         DispatchController::index();
         exit();
     });
+
+    // Alias de compatibilite (orthographe frequente)
+    $router->get('/dispach', function () {
+        DispatchController::index();
+        exit();
+    });
 }, [SecurityHeadersMiddleware::class]);
 
 $router->group('/api/dispatch', function (Router $router) {
