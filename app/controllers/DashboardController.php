@@ -4,14 +4,6 @@ declare(strict_types=1);
 
 class DashboardController
 {
-    /** @var DashboardModel */
-    private $dashboardModel;
-
-    public function __construct(DashboardModel $dashboardModel)
-    {
-        $this->dashboardModel = $dashboardModel;
-    }
-
     public function index(): void
     {
         Flight::render('dashboard');
@@ -20,7 +12,8 @@ class DashboardController
     public function apiData(): void
     {
         try {
-            $data = $this->dashboardModel->getDashboardData();
+            $dashboardModel = new DashboardModel(Flight::db());
+            $data = $dashboardModel->getDashboardData();
 
             Flight::json([
                 'success' => true,

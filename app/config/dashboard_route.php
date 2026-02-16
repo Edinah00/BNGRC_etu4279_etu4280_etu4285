@@ -10,11 +10,11 @@ $router->get('/', function (): void {
 });
 
 $router->get('/dashboard', function (): void {
-    $controller = new DashboardController(new DashboardModel(Flight::db()));
+    $controller = new DashboardController();
     $controller->index();
 });
 
 $router->get('/api/dashboard', function (): void {
-    $controller = new DashboardController(new DashboardModel(Flight::db()));
+    $controller = new DashboardController();
     $controller->apiData();
 });
