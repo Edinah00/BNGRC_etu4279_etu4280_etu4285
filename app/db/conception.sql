@@ -1,3 +1,5 @@
+CREATE database IF NOT EXISTS bngrc;
+use bngrc;
 CREATE TABLE region (
     id_region INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL
@@ -19,6 +21,7 @@ CREATE TABLE besoin (
     id_besoin INT AUTO_INCREMENT PRIMARY KEY,
     id_ville INT,
     id_type INT,
+    nom_produit VARCHAR(100) NOT NULL,
     quantite INT NOT NULL,
     prix_unitaire DECIMAL(12,2) NOT NULL,
     date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
