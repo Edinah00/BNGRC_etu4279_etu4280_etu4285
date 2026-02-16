@@ -77,3 +77,27 @@ Ce qu'on a fait jusque la :
 - Les actions CRUD restent dans chaque page entite.
 - Duree: ~5 min
 
+
+[✓] 19) Corriger conflit Git visible dans dashboard
+- Suppression des marqueurs de merge Git dans app/views/dashboard.php.
+- Le hash ne s'affiche plus dans la page.
+- Duree: ~3 min
+
+Petit mot humain:
+- C'etait un conflit non resolu, pas une erreur de base de donnees.
+
+[✓] 20) Nettoyage global des conflits Git
+- Suppression des marqueurs de conflit restants dans app/log/exception.log.
+- Verification globale des marqueurs sur le projet et check syntaxe PHP.
+- Duree: ~6 min
+
+Petit mot humain:
+- Le projet est propre cote conflits, tu peux continuer sans pollution de merge.
+
+[✓] 21) Refaire model.php au style du sidebar rapport
+- Sidebar commun avec icones et structure visuelle propre.
+- Liens reels uniquement: /dashboard, /regions, /villes, /besoins, /dons, /rapport.
+- Duree: ~8 min
+
+Petit mot humain:
+- La navigation est maintenant jolie + coherente sur toutes les pages.
