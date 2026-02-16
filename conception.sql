@@ -1,34 +1,45 @@
 CREATE TABLE region (
-    id_region SERIAL PRIMARY KEY,
+    id_region INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL
 );
+
 CREATE TABLE ville (
-    id_ville SERIAL PRIMARY KEY,
+    id_ville INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
-    id_region INT REFERENCES region(id_region)
+    id_region INT,
+    FOREIGN KEY (id_region) REFERENCES region(id_region)
 );
+
 CREATE TABLE type_besoin (
-    id_type SERIAL PRIMARY KEY,
+    id_type INT AUTO_INCREMENT PRIMARY KEY,
     libelle VARCHAR(50) NOT NULL
 );
+
 CREATE TABLE besoin (
-    id_besoin SERIAL PRIMARY KEY,
-    id_ville INT REFERENCES ville(id_ville),
-    id_type INT REFERENCES type_besoin(id_type),
-    quantite INT NOT NULL CHECK (quantite > 0),
-    prix_unitaire NUMERIC(12,2) NOT NULL CHECK (prix_unitaire >= 0),
-    date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_besoin INT AUTO_INCREMENT PRIMARY KEY,
+    id_ville INT,
+    id_type INT,
+    quantite INT NOT NULL,
+    prix_unitaire DECIMAL(12,2) NOT NULL,
+    date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_ville) REFERENCES ville(id_ville),
+    FOREIGN KEY (id_type) REFERENCES type_besoin(id_type)
 );
+
 CREATE TABLE don (
-    id_don SERIAL PRIMARY KEY,
-    id_type INT REFERENCES type_besoin(id_type),
-    quantite NUMERIC(12,2) NOT NULL CHECK (quantite > 0),
-    date_don TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_don INT AUTO_INCREMENT PRIMARY KEY,
+    id_type INT,
+    quantite DECIMAL(12,2) NOT NULL,
+    date_don TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_type) REFERENCES type_besoin(id_type)
 );
+
 CREATE TABLE distribution (
-    id_dispatch SERIAL PRIMARY KEY,
-    id_don INT REFERENCES don(id_don),
-    id_ville INT REFERENCES ville(id_ville),
-    quantite_attribuee NUMERIC(12,2) NOT NULL CHECK (quantite_attribuee > 0),
-    date_dispatch TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_dispatch INT AUTO_INCREMENT PRIMARY KEY,
+    id_don INT,
+    id_ville INT,
+    quantite_attribuee DECIMAL(12,2) NOT NULL,
+    date_dispatch TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_don) REFERENCES don(id_don),
+    FOREIGN KEY (id_ville) REFERENCES ville(id_ville)
 );
