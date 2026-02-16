@@ -46,7 +46,9 @@ $menuItems = [
 <aside class="sidebar">
     <div class="sidebar-header">
         <div class="logo-container">
-            <div class="logo-badge">B</div>
+            <div class="logo-badge">
+                <img src="/assets/images/bngrc.png" alt="Logo BNGRC">
+            </div>
             <div class="logo-text">
                 <h1>BNGRC</h1>
                 <p>Gestion des dons</p>
