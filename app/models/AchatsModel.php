@@ -10,7 +10,7 @@ class AchatsModel
     {
         $feeRate = $this->getFeeRate();
         $money = $this->getMoneySummary();
-        $needs = $this->getBesoinsAchetables($villeId, $typeId, $feeRate, $money['argent_disponible']);
+        $needs = $this->getBesoinsAchetables($typeId);
         $history = $this->getHistorique($villeId, $periode);
 
         return [
@@ -103,6 +103,122 @@ class AchatsModel
         }
     }
 
+    public function createAchatParType($typeId, $quantite)
+    {
+        $typeId = (int) $typeId;
+        $quantite = (float) $quantite;
+
+        if ($typeId <= 0) {
+            throw new \Exception('Type de besoin invalide.');
+        }
+        if ($quantite <= 0) {
+            throw new \Exception('La quantité doit être supérieure à 0.');
+        }
+
+        Flight::db()->beginTransaction();
+
+        try {
+            $type = $this->getTypeAchatable($typeId);
+            if (!$type) {
+                throw new \Exception('Type de besoin invalide ou non achetable.');
+            }
+
+            $donRestant = $this->getDonRestantParType($typeId);
+            if ($donRestant > 0) {
+                throw new \Exception('Ce type existe encore dans les dons disponibles (' . $donRestant . '). Utilisez d\'abord les dons existants.');
+            }
+
+            $remainingToBuy = $quantite;
+            $feeRate = $this->getFeeRate();
+            $plannedRows = [];
+            $totalTtc = 0.0;
+
+            $needIds = $this->getBesoinIdsByType($typeId);
+            foreach ($needIds as $besoinId) {
+                if ($remainingToBuy <= 0) {
+                    break;
+                }
+
+                $remainingNeed = $this->getQuantiteRestante($besoinId);
+                if ($remainingNeed <= 0) {
+                    continue;
+                }
+
+                $need = $this->getBesoinPourAchat($besoinId);
+                if (!$need) {
+                    continue;
+                }
+
+                $qteToBuy = min($remainingNeed, $remainingToBuy);
+                if ($qteToBuy <= 0) {
+                    continue;
+                }
+
+                $montantHt = $qteToBuy * (float) $need['prix_unitaire'];
+                $montantFrais = $montantHt * ($feeRate / 100);
+                $montantTtc = $montantHt + $montantFrais;
+                $totalTtc += $montantTtc;
+
+                $plannedRows[] = [
+                    'id_besoin' => (int) $need['id_besoin'],
+                    'id_ville' => (int) $need['id_ville'],
+                    'id_type' => (int) $need['id_type'],
+                    'nom_produit' => $need['nom_produit'],
+                    'quantite' => $qteToBuy,
+                    'prix_unitaire' => (float) $need['prix_unitaire'],
+                    'montant_ht' => $montantHt,
+                    'montant_frais' => $montantFrais,
+                    'montant_ttc' => $montantTtc,
+                ];
+
+                $remainingToBuy -= $qteToBuy;
+            }
+
+            if ($remainingToBuy > 0) {
+                $maxAchetable = max($quantite - $remainingToBuy, 0);
+                throw new \Exception('Quantité demandée trop grande. Quantité maximale achetable pour ce type: ' . $maxAchetable . '.');
+            }
+
+            $money = $this->getMoneySummary();
+            if ($totalTtc > $money['argent_disponible']) {
+                throw new \Exception('Argent insuffisant. Disponible: ' . $money['argent_disponible'] . ' Ar, Nécessaire: ' . $totalTtc . ' Ar.');
+            }
+
+            $sql = "INSERT INTO achat (id_besoin, id_ville, id_type, nom_produit, quantite, prix_unitaire, montant_ht, taux_frais, montant_frais, montant_ttc)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = Flight::db()->prepare($sql);
+
+            foreach ($plannedRows as $row) {
+                $stmt->execute([
+                    $row['id_besoin'],
+                    $row['id_ville'],
+                    $row['id_type'],
+                    $row['nom_produit'],
+                    $row['quantite'],
+                    $row['prix_unitaire'],
+                    $row['montant_ht'],
+                    $feeRate,
+                    $row['montant_frais'],
+                    $row['montant_ttc'],
+                ]);
+            }
+
+            Flight::db()->commit();
+
+            return [
+                'id_type' => $typeId,
+                'quantite' => $quantite,
+                'montant_ttc' => $totalTtc,
+                'lignes_achat' => count($plannedRows),
+            ];
+        } catch (\Exception $e) {
+            if (Flight::db()->inTransaction()) {
+                Flight::db()->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     public function updateFeeRate($rate)
     {
         if ($rate < 0 || $rate > 100) {
@@ -174,113 +290,99 @@ class AchatsModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    private function getBesoinsAchetables($villeId, $typeId, $feeRate, $moneyAvailable)
+    private function getBesoinsAchetables($typeId)
     {
-        $sql = "SELECT b.id_besoin, b.id_ville, v.nom AS ville, b.id_type,
-                       tb.libelle AS type_besoin, b.nom_produit, b.quantite, b.prix_unitaire, b.date_saisie
+        $sql = "SELECT b.id_type, tb.libelle AS type_besoin, COALESCE(SUM(b.quantite), 0) AS quantite_totale
                 FROM besoin b
-                JOIN ville v ON v.id_ville = b.id_ville
                 JOIN type_besoin tb ON tb.id_type = b.id_type
                 WHERE tb.categorie IN ('nature', 'matériaux')";
         $params = [];
 
-        if ($villeId !== null) {
-            $sql .= " AND b.id_ville = ?";
-            $params[] = $villeId;
-        }
         if ($typeId !== null) {
             $sql .= " AND b.id_type = ?";
             $params[] = $typeId;
         }
 
-        $sql .= " ORDER BY b.date_saisie ASC, b.id_besoin ASC";
+        $sql .= " GROUP BY b.id_type, tb.libelle
+                  ORDER BY tb.libelle ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute($params);
-        $needs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $typeNeeds = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($needs)) {
+        if (empty($typeNeeds)) {
             return [];
         }
 
-        $distMap = $this->getDistribueParVilleType();
-        $achatMap = $this->getAchatParBesoin();
+        $distMap = $this->getDistribueParType();
+        $achatMap = $this->getAchatParType();
         $donMap = $this->getDonRestantParTypeMap();
 
         $rows = [];
-        foreach ($needs as $need) {
-            $key = $need['id_ville'] . '-' . $need['id_type'];
-            $alreadyDistributed = (float) ($distMap[$key] ?? 0.0);
-            $needQty = (float) $need['quantite'];
+        foreach ($typeNeeds as $need) {
+            $typeId = (int) $need['id_type'];
+            $needQty = (float) $need['quantite_totale'];
+            $distributed = (float) ($distMap[$typeId] ?? 0.0);
+            $bought = (float) ($achatMap[$typeId] ?? 0.0);
+            $donRestant = (float) ($donMap[$typeId] ?? 0.0);
 
-            $consumed = min($needQty, max($alreadyDistributed, 0));
-            $afterDist = max($needQty - $consumed, 0);
-            $distMap[$key] = max($alreadyDistributed - $consumed, 0);
+            $coveredByDistribution = min($needQty, max($distributed, 0));
+            $afterDistribution = max($needQty - $coveredByDistribution, 0);
+            $coveredByAchat = min($afterDistribution, max($bought, 0));
+            $remainingQty = max($afterDistribution - $coveredByAchat, 0);
 
-            $alreadyBought = (float) ($achatMap[$need['id_besoin']] ?? 0.0);
-            $remainingQty = max($afterDist - $alreadyBought, 0);
-
+            $status = 'a_acheter';
+            $statusLabel = 'A acheter';
             if ($remainingQty <= 0) {
-                continue;
+                $status = 'satisfait';
+                $statusLabel = 'Satisfait';
+            } elseif ($donRestant > 0) {
+                $status = 'dons_existants';
+                $statusLabel = 'Dons existants';
             }
 
-            $unitPrice = (float) $need['prix_unitaire'];
-            $montantHt = $remainingQty * $unitPrice;
-            $montantFrais = $montantHt * ($feeRate / 100);
-            $montantTtc = $montantHt + $montantFrais;
-            $donRestant = (float) ($donMap[$need['id_type']] ?? 0.0);
-
             $rows[] = [
-                'id_besoin' => $need['id_besoin'],
-                'id_ville' => $need['id_ville'],
-                'ville' => $need['ville'],
-                'id_type' => $need['id_type'],
+                'id_type' => $typeId,
                 'type_besoin' => $need['type_besoin'],
-                'nom_produit' => $need['nom_produit'],
-                'quantite_demandee' => $needQty,
-                'quantite_recue_distribution' => $consumed,
-                'quantite_recue_achat' => $alreadyBought,
+                'quantite_totale' => $needQty,
+                'quantite_recue_distribution' => $coveredByDistribution,
+                'quantite_recue_achat' => $coveredByAchat,
                 'quantite_restante' => $remainingQty,
-                'prix_unitaire' => $unitPrice,
-                'montant_ht' => $montantHt,
-                'montant_frais' => $montantFrais,
-                'montant_ttc' => $montantTtc,
                 'don_restant_type' => $donRestant,
-                'achat_bloque' => $donRestant > 0,
-                'achat_possible_budget' => $montantTtc <= $moneyAvailable,
-                'date_saisie' => $need['date_saisie'],
+                'status' => $status,
+                'status_label' => $statusLabel,
             ];
         }
 
         return $rows;
     }
 
-    private function getDistribueParVilleType()
+    private function getDistribueParType()
     {
-        $sql = "SELECT dist.id_ville, d.id_type, SUM(dist.quantite_attribuee) AS quantite
+        $sql = "SELECT d.id_type, SUM(dist.quantite_attribuee) AS quantite
                 FROM distribution dist
                 JOIN don d ON d.id_don = dist.id_don
-                GROUP BY dist.id_ville, d.id_type";
+                GROUP BY d.id_type";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $map = [];
         foreach ($rows as $row) {
-            $map[$row['id_ville'] . '-' . $row['id_type']] = (float) $row['quantite'];
+            $map[(int) $row['id_type']] = (float) $row['quantite'];
         }
         return $map;
     }
 
-    private function getAchatParBesoin()
+    private function getAchatParType()
     {
-        $sql = "SELECT id_besoin, SUM(quantite) AS quantite FROM achat GROUP BY id_besoin";
+        $sql = "SELECT id_type, SUM(quantite) AS quantite FROM achat GROUP BY id_type";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $map = [];
         foreach ($rows as $row) {
-            $map[$row['id_besoin']] = (float) $row['quantite'];
+            $map[(int) $row['id_type']] = (float) $row['quantite'];
         }
         return $map;
     }
@@ -444,6 +546,34 @@ class AchatsModel
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute([$typeId]);
         return (float) $stmt->fetchColumn();
+    }
+
+    private function getTypeAchatable($typeId)
+    {
+        $sql = "SELECT id_type, libelle
+                FROM type_besoin
+                WHERE id_type = ? AND categorie IN ('nature', 'matériaux')
+                LIMIT 1";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute([(int) $typeId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function getBesoinIdsByType($typeId)
+    {
+        $sql = "SELECT id_besoin
+                FROM besoin
+                WHERE id_type = ?
+                ORDER BY date_saisie ASC, id_besoin ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute([(int) $typeId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $ids = [];
+        foreach ($rows as $row) {
+            $ids[] = (int) $row['id_besoin'];
+        }
+        return $ids;
     }
 }
 ?>

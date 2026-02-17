@@ -2,7 +2,7 @@
             <div class="header-content" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
                 <div class="header-text">
                     <h1 class="page-title">Simulation de Dispatch</h1>
-                    <p class="page-description">Distribution FIFO des dons selon les besoins non satisfaits</p>
+                    <p class="page-description">Distribution des dons selon les besoins non satisfaits (FIFO, proportionnel ou priorité petits)</p>
                 </div>
                 <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
                     <button class="btn-primary" id="simulateBtn" type="button">
@@ -14,11 +14,37 @@
             </div>
         </header>
 
+        <section class="mode-selector" id="modeSelector">
+            <label class="mode-card" for="modeFifo">
+                <input type="radio" name="mode_dispatch" id="modeFifo" value="fifo" checked>
+                <div class="mode-content">
+                    <span class="mode-title">FIFO</span>
+                    <span class="mode-desc">Premier arrivé, premier servi</span>
+                </div>
+            </label>
+
+            <label class="mode-card" for="modeProportionnel">
+                <input type="radio" name="mode_dispatch" id="modeProportionnel" value="proportionnel">
+                <div class="mode-content">
+                    <span class="mode-title">Proportionnel</span>
+                    <span class="mode-desc">Répartition selon le ratio de besoin restant</span>
+                </div>
+            </label>
+
+            <label class="mode-card" id="card-priorite-petits" for="modePrioritePetits">
+                <input type="radio" name="mode_dispatch" id="modePrioritePetits" value="priorite_petits">
+                <div class="mode-content">
+                    <span class="mode-title">Priorité Petits</span>
+                    <span class="mode-desc">Les plus petits besoins sont satisfaits en premier</span>
+                </div>
+            </label>
+        </section>
+
         <section class="empty-state" id="emptyState">
             <div class="empty-state-card">
                 <div class="empty-state-content">
                     <h2 class="empty-state-title">Cliquez sur "Simuler" pour lancer la distribution</h2>
-                    <p class="empty-state-text">Les besoins sont servis par ordre chronologique de saisie.</p>
+                    <p class="empty-state-text">Sélectionnez un mode puis lancez la simulation.</p>
                 </div>
             </div>
         </section>
@@ -39,17 +65,7 @@
                 </div>
                 <div class="results-table-container">
                     <table class="results-table">
-                        <thead>
-                            <tr>
-                                <th>Don</th>
-                                <th>Don déjà utilisé</th>
-                                <th>Type</th>
-                                <th>Ville destinataire</th>
-                                <th>Besoin déjà satisfait</th>
-                                <th>Quantité proposée</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
+                        <thead id="resultsTableHead"></thead>
                         <tbody id="resultsTableBody"></tbody>
                     </table>
                 </div>

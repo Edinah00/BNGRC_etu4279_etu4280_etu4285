@@ -31,12 +31,12 @@ class DashboardModel
 
     public function getBesoinsByRegion()
     {
-        $sql = "SELECT r.nom AS region, COALESCE(SUM(b.quantite * b.prix_unitaire), 0) AS total_besoins
+        $sql = "SELECT r.nom AS region, COALESCE(SUM(b.quantite * b.prix_unitaire), 0) AS besoins
                 FROM region r
                 LEFT JOIN ville v ON v.id_region = r.id_region
                 LEFT JOIN besoin b ON b.id_ville = v.id_ville
                 GROUP BY r.id_region, r.nom
-                ORDER BY total_besoins DESC, r.nom ASC";
+                ORDER BY besoins DESC, r.nom ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -44,12 +44,12 @@ class DashboardModel
 
     public function getBesoinsByType()
     {
-        $sql = "SELECT t.libelle AS type, COUNT(b.id_besoin) AS total
+        $sql = "SELECT t.libelle AS name, COUNT(b.id_besoin) AS value
                 FROM type_besoin t
                 LEFT JOIN besoin b ON b.id_type = t.id_type
                 GROUP BY t.id_type, t.libelle
                 HAVING COUNT(b.id_besoin) > 0
-                ORDER BY total DESC, t.libelle ASC";
+                ORDER BY value DESC, t.libelle ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -58,13 +58,13 @@ class DashboardModel
     public function getTopCities()
     {
         $sql = "SELECT v.nom AS ville, r.nom AS region,
-                       COUNT(b.id_besoin) AS besoins_count,
-                       COALESCE(SUM(b.quantite * b.prix_unitaire), 0) AS total_value
+                    COUNT(b.id_besoin) AS besoins,
+                    COALESCE(SUM(b.quantite * b.prix_unitaire), 0) AS value
                 FROM ville v
                 LEFT JOIN region r ON r.id_region = v.id_region
                 LEFT JOIN besoin b ON b.id_ville = v.id_ville
                 GROUP BY v.id_ville, v.nom, r.nom
-                ORDER BY total_value DESC, v.nom ASC
+                ORDER BY value DESC, v.nom ASC
                 LIMIT 10";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();

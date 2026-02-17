@@ -121,3 +121,65 @@
     padding: 0.65rem;
     color: #28435f;
 }
+
+.summary-strip > div strong {
+    color: #0c2b4e;
+}
+
+.history-section .filter-select {
+    min-width: 220px;
+}
+
+.history-section .data-table td:nth-child(4),
+.history-section .data-table td:nth-child(5),
+.history-section .data-table td:nth-child(6),
+.history-section .data-table td:nth-child(7) {
+    white-space: nowrap;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.status-ok {
+    color: #0f5132;
+    background: #d1e7dd;
+    border-color: #badbcc;
+}
+
+.status-warning {
+    color: #664d03;
+    background: #fff3cd;
+    border-color: #ffecb5;
+}
+
+.status-danger {
+    color: #842029;
+    background: #f8d7da;
+    border-color: #f5c2c7;
+}
+
+.buy-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.btn-buy-row[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.hint-error {
+    color: #842029;
+}
+
+.hint-success {
+    color: #0f5132;
+}

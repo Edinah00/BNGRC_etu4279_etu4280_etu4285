@@ -66,10 +66,14 @@ Debugger::enable(); // Auto-detects environment
 // Debugger::enable('23.75.345.200'); // Restrict debug bar to specific IPs
 Debugger::$logDirectory = __DIR__ . $ds . '..' . $ds . 'log'; // Log directory
 Debugger::$strictMode = true; // Show all errors (set to E_ALL & ~E_DEPRECATED for less noise)
-// Empêche l'injection de HTML (debu5432g bar) dans les réponses API JSON.
+// Empêche l'injection de HTML (debug bar) dans les réponses API JSON.
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
 if (str_starts_with($requestUri, '/api/') || str_contains($acceptHeader, 'application/json')) {
+    Debugger::$showBar = false;
+}
+// Désactiver la debug bar si mbstring n'est pas disponible (évite les erreurs Tracy)
+if (!function_exists('mb_strlen')) {
     Debugger::$showBar = false;
 }
 // Debugger::$maxLen = 1000; // Max length of dumped variables (default: 150)

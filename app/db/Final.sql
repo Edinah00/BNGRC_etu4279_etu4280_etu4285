@@ -12,6 +12,15 @@ TRUNCATE TABLE ville;
 TRUNCATE TABLE region;
 SET FOREIGN_KEY_CHECKS = 1;
 
+ALTER TABLE distribution
+ADD COLUMN IF NOT EXISTS mode_dispatch
+    ENUM('fifo', 'proportionnel', 'priorite_petits') NOT NULL DEFAULT 'fifo'
+    AFTER date_dispatch;
+
+ALTER TABLE distribution
+MODIFY COLUMN mode_dispatch
+    ENUM('fifo', 'proportionnel', 'priorite_petits') NOT NULL DEFAULT 'fifo';
+
 
 -- ========================================
 -- 2. RÉGIONS (10 régions)

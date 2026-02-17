@@ -42,4 +42,5 @@ $router->delete('/api/dons/@id:[0-9]+',        [new DonsController(), 'delete'])
 // API Achats
 $router->get('/api/achats',                    [new AchatsController(), 'listItems']);
 $router->post('/api/achats',                   [new AchatsController(), 'create']);
+$router->post('/api/achats/type',              [new AchatsController(), 'createByType']);
 $router->put('/api/achats/configuration/frais',[new AchatsController(), 'updateFeeRate']);

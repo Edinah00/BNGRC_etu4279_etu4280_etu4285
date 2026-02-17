@@ -49,3 +49,44 @@ CREATE TABLE distribution (
     FOREIGN KEY (id_don) REFERENCES don(id_don),
     FOREIGN KEY (id_ville) REFERENCES ville(id_ville)
 );
+
+
+-- CREATE TABLE besoin (
+
+--     id_besoin INT AUTO_INCREMENT PRIMARY KEY,
+
+--     id_ville INT,
+
+--     id_type INT,
+
+--     nom_produit VARCHAR(100) NOT NULL,
+
+--     quantite INT NOT NULL,
+
+--     quantite_satisfaite DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+--     prix_unitaire DECIMAL(12,2) NOT NULL,
+
+--     date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+--     FOREIGN KEY (id_ville) REFERENCES ville(id_ville),
+
+--     FOREIGN KEY (id_type) REFERENCES type_besoin(id_type)
+
+-- );
+
+-- CREATE TABLE don (
+
+--     id_don INT AUTO_INCREMENT PRIMARY KEY,
+
+--     id_type INT,
+
+--     quantite DECIMAL(12,2) NOT NULL,
+
+--     quantite_utilisee DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+--     date_don TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+--     FOREIGN KEY (id_type) REFERENCES type_besoin(id_type)
+
+-- );, On a adopté ce nouveau conception, il faut que dans 

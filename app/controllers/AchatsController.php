@@ -71,6 +71,41 @@ class AchatsController{
         }
     }
 
+    public function createByType(){
+        $payload = $this->payload();
+        $idType = (int) ($payload['id_type'] ?? 0);
+        $quantite = (float) ($payload['quantite'] ?? 0);
+
+        if ($idType <= 0 || $quantite <= 0) {
+            Flight::json([
+                'success' => false,
+                'message' => 'Champs invalides. Vérifiez le type et la quantité.',
+            ], 422);
+            return;
+        }
+
+        try {
+            $model = new AchatsModel();
+            $result = $model->createAchatParType($idType, $quantite);
+
+            Flight::json([
+                'success' => true,
+                'message' => 'Achat effectué avec succès.',
+                'data' => $result,
+            ]);
+        } catch (\Exception $e) {
+            Flight::json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Flight::json([
+                'success' => false,
+                'message' => 'Erreur serveur pendant la création de l\'achat: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function updateFeeRate(){
         $payload = $this->payload();
         $rate = (float) ($payload['taux_frais'] ?? -1);

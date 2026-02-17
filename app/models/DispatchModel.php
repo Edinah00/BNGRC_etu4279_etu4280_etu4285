@@ -1,4 +1,5 @@
 <?php
+
 namespace app\models;
 
 use Flight;
@@ -7,13 +8,105 @@ use PDO;
 class DispatchModel
 {
     private const RESET_SEED_FILE = __DIR__ . '/../db/reset_besoins_dons.sql';
+    private static bool $schemaChecked = false;
 
-    public function getDonsDisponibles()
+    public function __construct()
+    {
+        $this->ensureDispatchSchema();
+    }
+
+    private function ensureDispatchSchema(): void
+    {
+        if (self::$schemaChecked) {
+            return;
+        }
+
+        $db = Flight::db();
+
+        // Best effort: align local schema with current dispatch logic.
+        $queries = [
+            "ALTER TABLE don
+             ADD COLUMN IF NOT EXISTS quantite_utilisee DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER quantite",
+            "ALTER TABLE besoin
+             ADD COLUMN IF NOT EXISTS quantite_satisfaite DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER quantite",
+            "ALTER TABLE distribution
+             ADD COLUMN IF NOT EXISTS mode_dispatch ENUM('fifo', 'proportionnel', 'priorite_petits') NOT NULL DEFAULT 'fifo' AFTER date_dispatch",
+            "ALTER TABLE distribution
+             MODIFY COLUMN mode_dispatch ENUM('fifo', 'proportionnel', 'priorite_petits') NOT NULL DEFAULT 'fifo'",
+        ];
+
+        foreach ($queries as $sql) {
+            try {
+                $db->exec($sql);
+            } catch (\Throwable $e) {
+                // Ignore to keep compatibility across environments/privileges.
+            }
+        }
+
+        self::$schemaChecked = true;
+    }
+
+    public function getTypeLabelsMap(): array
+    {
+        $sql = "SELECT id_type, libelle FROM type_besoin ORDER BY id_type ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row['id_type']] = (string) $row['libelle'];
+        }
+
+        return $map;
+    }
+
+    public function getRemainingDonByTypeMap(): array
+    {
+        $sql = "SELECT d.id_type,
+                       COALESCE(SUM(GREATEST(d.quantite - d.quantite_utilisee, 0)), 0) AS don_disponible
+                FROM don d
+                GROUP BY d.id_type";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row['id_type']] = (float) $row['don_disponible'];
+        }
+
+        return $map;
+    }
+
+    public function getAvailableDonsByType(int $idType): array
+    {
+        $sql = "SELECT d.id_don, d.id_type, d.date_don,
+                       GREATEST(d.quantite - d.quantite_utilisee, 0) AS restant
+                FROM don d
+                WHERE d.id_type = ?
+                HAVING restant > 0
+                ORDER BY d.date_don ASC, d.id_don ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute([$idType]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            $row['id_don'] = (int) $row['id_don'];
+            $row['id_type'] = (int) $row['id_type'];
+            $row['restant'] = (float) $row['restant'];
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    public function getDonsDisponibles(): array
     {
         $sql = "SELECT d.id_don, d.id_type, tb.libelle AS type_besoin,
                        d.quantite AS quantite_totale, d.date_don,
                        d.quantite_utilisee AS quantite_utilisee,
-                       d.quantite - d.quantite_utilisee AS quantite_restante
+                       GREATEST(d.quantite - d.quantite_utilisee, 0) AS quantite_restante
                 FROM don d
                 JOIN type_besoin tb ON tb.id_type = d.id_type
                 WHERE d.quantite - d.quantite_utilisee > 0
@@ -23,12 +116,12 @@ class DispatchModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getBesoinsNonSatisfaits($idType)
+    public function getBesoinsNonSatisfaits(int $idType): array
     {
         $sql = "SELECT b.id_besoin, b.id_ville, v.nom AS ville, b.id_type,
                        b.nom_produit, b.quantite AS quantite_demandee,
                        b.quantite_satisfaite,
-                       b.quantite - b.quantite_satisfaite AS quantite_restante,
+                       GREATEST(b.quantite - b.quantite_satisfaite, 0) AS quantite_restante,
                        b.date_saisie
                 FROM besoin b
                 JOIN ville v ON v.id_ville = b.id_ville
@@ -40,7 +133,7 @@ class DispatchModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getVillesEligibles($idType)
+    public function getVillesEligibles(int $idType): array
     {
         $needs = $this->getBesoinsNonSatisfaits($idType);
         $cities = [];
@@ -57,14 +150,14 @@ class DispatchModel
             $cities[$cityId]['besoin_restant'] += (float) $need['quantite_restante'];
         }
 
-        usort($cities, function($a, $b) {
+        usort($cities, function ($a, $b) {
             return strcmp($a['nom'], $b['nom']);
         });
 
         return array_values($cities);
     }
 
-    public function getDonRemainingsByIds(array $donIds)
+    public function getDonRemainingsByIds(array $donIds): array
     {
         if (empty($donIds)) {
             return [];
@@ -73,7 +166,7 @@ class DispatchModel
         $placeholders = implode(',', array_fill(0, count($donIds), '?'));
         $sql = "SELECT d.id_don, d.id_type, d.quantite AS quantite_totale,
                        d.quantite_utilisee AS quantite_utilisee,
-                       d.quantite - d.quantite_utilisee AS quantite_restante
+                       GREATEST(d.quantite - d.quantite_utilisee, 0) AS quantite_restante
                 FROM don d
                 WHERE d.id_don IN ($placeholders)
                 GROUP BY d.id_don, d.id_type, d.quantite, d.quantite_utilisee";
@@ -93,7 +186,7 @@ class DispatchModel
         return $map;
     }
 
-    public function getCityTypeRemainings(array $pairs)
+    public function getCityTypeRemainings(array $pairs): array
     {
         if (empty($pairs)) {
             return [];
@@ -110,7 +203,7 @@ class DispatchModel
         $inClause = implode(',', $placeholders);
 
         $sqlNeeds = "SELECT b.id_ville, b.id_type,
-                            SUM(b.quantite - b.quantite_satisfaite) AS quantite_restante
+                            SUM(GREATEST(b.quantite - b.quantite_satisfaite, 0)) AS quantite_restante
                      FROM besoin b
                      WHERE (b.id_ville, b.id_type) IN ($inClause)
                      GROUP BY b.id_ville, b.id_type";
@@ -130,11 +223,12 @@ class DispatchModel
         return $remainings;
     }
 
-    public function createDistribution($idDon, $idVille, $idType, $quantite)
+    public function createDistribution(int $idDon, int $idVille, int $idType, float $quantite, string $modeDispatch = 'fifo'): bool
     {
-        $sql = "INSERT INTO distribution (id_don, id_ville, quantite_attribuee, date_dispatch) VALUES (?, ?, ?, NOW())";
+        $sql = "INSERT INTO distribution (id_don, id_ville, quantite_attribuee, date_dispatch, mode_dispatch)
+                VALUES (?, ?, ?, NOW(), ?)";
         $stmt = Flight::db()->prepare($sql);
-        $stmt->execute([$idDon, $idVille, $quantite]);
+        $stmt->execute([$idDon, $idVille, $quantite, $modeDispatch]);
 
         $sqlDon = "UPDATE don
                    SET quantite_utilisee = LEAST(quantite, quantite_utilisee + ?)
@@ -146,7 +240,7 @@ class DispatchModel
         return true;
     }
 
-    private function applyBesoinSatisfaction($idVille, $idType, $quantite)
+    private function applyBesoinSatisfaction(int $idVille, int $idType, float $quantite): void
     {
         $remaining = (float) $quantite;
         if ($remaining <= 0) {
@@ -189,24 +283,24 @@ class DispatchModel
         }
     }
 
-    public function beginTransaction()
+    public function beginTransaction(): void
     {
         Flight::db()->beginTransaction();
     }
 
-    public function commit()
+    public function commit(): void
     {
         Flight::db()->commit();
     }
 
-    public function rollback()
+    public function rollback(): void
     {
         if (Flight::db()->inTransaction()) {
             Flight::db()->rollBack();
         }
     }
 
-    public function resetBesoinsEtDons()
+    public function resetBesoinsEtDons(): void
     {
         $db = Flight::db();
         $seedSql = @file_get_contents(self::RESET_SEED_FILE);
@@ -222,7 +316,7 @@ class DispatchModel
             try {
                 $db->exec('TRUNCATE TABLE achat');
             } catch (\Throwable $e) {
-                // Le module achat peut ne pas exister selon l\'environnement.
+                // Le module achat peut ne pas exister selon l'environnement.
             }
             $db->exec('TRUNCATE TABLE don');
             $db->exec('TRUNCATE TABLE besoin');
@@ -230,8 +324,6 @@ class DispatchModel
             $this->execSqlScript($db, $seedSql);
             $db->exec('UPDATE don SET quantite_utilisee = 0');
             $db->exec('UPDATE besoin SET quantite_satisfaite = 0');
-        } catch (\Throwable $e) {
-            throw $e;
         } finally {
             if ($foreignKeyDisabled) {
                 $db->exec('SET FOREIGN_KEY_CHECKS = 1');
@@ -239,9 +331,9 @@ class DispatchModel
         }
     }
 
-    private function execSqlScript(PDO $db, string $sqlScript)
+    private function execSqlScript(PDO $db, string $sqlScript): void
     {
-        $statements = preg_split('/;\s*[\r\n]+/', $sqlScript);
+        $statements = preg_split('/;\\s*[\\r\\n]+/', $sqlScript);
         if ($statements === false) {
             throw new \RuntimeException('Impossible de parser le script de réinitialisation.');
         }
@@ -255,4 +347,3 @@ class DispatchModel
         }
     }
 }
-?>

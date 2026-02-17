@@ -13,6 +13,62 @@
     margin-bottom: var(--spacing-xl);
 }
 
+.mode-selector {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.mode-card {
+    background: #ffffff;
+    border: 1px solid rgba(12, 43, 78, 0.2);
+    border-radius: var(--border-radius-md);
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.mode-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 4px 16px rgba(12, 43, 78, 0.12);
+}
+
+.mode-card input {
+    margin-right: 0.45rem;
+}
+
+.mode-card input:checked + .mode-content {
+    color: var(--color-primary);
+}
+
+.mode-card:has(input:checked) {
+    border-color: var(--color-accent);
+    box-shadow: 0 6px 20px rgba(41, 128, 185, 0.18);
+}
+
+#card-priorite-petits:has(input:checked) {
+    border-color: #27AE60;
+    background: rgba(39, 174, 96, 0.05);
+}
+
+.mode-content {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.mode-title {
+    font-family: var(--font-display);
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.mode-desc {
+    color: var(--color-secondary);
+    font-size: 0.875rem;
+}
+
 .header-content {
     display: flex;
     align-items: center;
@@ -193,6 +249,40 @@
     border: 1px solid rgba(26, 61, 100, 0.2);
 }
 
+.badge-satisfait,
+.badge-partiel,
+.badge-zero {
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-satisfait {
+    background: #27AE60;
+}
+
+.badge-partiel {
+    background: #F39C12;
+}
+
+.badge-zero {
+    background: #E74C3C;
+}
+
+.row-success {
+    background: rgba(39, 174, 96, 0.05);
+}
+
+.row-warning {
+    background: rgba(243, 156, 18, 0.06);
+}
+
+.row-danger {
+    background: rgba(231, 76, 60, 0.06);
+}
+
 .results-table select,
 .results-table input[type="number"] {
     width: 100%;
@@ -279,6 +369,10 @@
 }
 
 @media (max-width: 768px) {
+    .mode-selector {
+        grid-template-columns: 1fr;
+    }
+
     .header-content {
         align-items: stretch;
     }

@@ -13,7 +13,7 @@ $pageTitle = match($page) {
 };
 
 $pageCssMap = [
-    'dashboard' => [],
+    'dashboard' => ['/assets/css/dashboard.css'],
     'regions'   => ['/assets/css/besoins.css'],
     'villes'    => ['/assets/css/besoins.css'],
     'besoins'   => ['/assets/css/besoins.css'],
