@@ -30,6 +30,15 @@ var elements = {
   historyBody: document.getElementById('historyBody')
 };
 
+function apiUrl(path) {
+  var base = window.BASE_URL || '';
+  var clean = String(path || '');
+  if (clean.charAt(0) !== '/') {
+    clean = '/' + clean;
+  }
+  return base + clean;
+}
+
 function fmt(n) {
   return Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 }
@@ -51,7 +60,7 @@ function currentQueryString() {
 
 function loadData() {
   var qs = currentQueryString();
-  var url = '/api/achats';
+  var url = apiUrl('/api/achats');
   if (qs) {
     url = url + '?' + qs;
   }
@@ -118,7 +127,7 @@ function renderFilters() {
     var t = state.types[i];
     var opt = document.createElement('option');
     opt.value = t.id;
-    opt.textContent = t.libelle;
+    opt.textContent = t.categorie || t.libelle;
     elements.filterType.appendChild(opt);
   }
 
@@ -141,11 +150,19 @@ function renderBuyTypeOptions() {
   placeholder.textContent = 'Choisir un type';
   elements.buyType.appendChild(placeholder);
 
+  var labelsByType = {};
+  for (var j = 0; j < state.needs.length; j++) {
+    var need = state.needs[j];
+    if (!labelsByType[need.id_type] && need.nom_produit) {
+      labelsByType[need.id_type] = need.nom_produit;
+    }
+  }
+
   for (var i = 0; i < state.types.length; i++) {
     var t = state.types[i];
     var opt = document.createElement('option');
     opt.value = t.id;
-    opt.textContent = t.libelle;
+    opt.textContent = labelsByType[t.id] || t.categorie || t.libelle;
     elements.buyType.appendChild(opt);
   }
 
@@ -204,7 +221,7 @@ function renderNeeds() {
   if (state.needs.length === 0) {
     var trEmpty = document.createElement('tr');
     var tdEmpty = document.createElement('td');
-    tdEmpty.colSpan = 6;
+    tdEmpty.colSpan = 7;
     tdEmpty.className = 'empty-row';
     tdEmpty.textContent = 'Aucun besoin trouvé';
     trEmpty.appendChild(tdEmpty);
@@ -219,6 +236,9 @@ function renderNeeds() {
     var tdType = document.createElement('td');
     tdType.textContent = n.type_besoin;
 
+    var tdProduit = document.createElement('td');
+    tdProduit.textContent = n.nom_produit || '-';
+
     var tdTotal = document.createElement('td');
     tdTotal.textContent = fmt(n.quantite_totale);
 
@@ -229,6 +249,7 @@ function renderNeeds() {
     tdDonRestant.textContent = fmt(n.don_restant_type);
 
     tr.appendChild(tdType);
+    tr.appendChild(tdProduit);
     tr.appendChild(tdTotal);
     tr.appendChild(tdRestant);
     tr.appendChild(tdDonRestant);
@@ -364,7 +385,7 @@ function submitBuyForm() {
   }
 
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/achats/type', true);
+  xhr.open('POST', apiUrl('/api/achats/type'), true);
   xhr.setRequestHeader('Accept', 'application/json');
   xhr.setRequestHeader('Content-Type', 'application/json');
 
@@ -396,7 +417,7 @@ function saveFeeRate() {
 
   var rate = Number(elements.inputFeeRate.value || 0);
   var xhr = new XMLHttpRequest();
-  xhr.open('PUT', '/api/achats/configuration/frais', true);
+  xhr.open('PUT', apiUrl('/api/achats/configuration/frais'), true);
   xhr.setRequestHeader('Accept', 'application/json');
   xhr.setRequestHeader('Content-Type', 'application/json');
 

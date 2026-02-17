@@ -46,6 +46,7 @@ CREATE TABLE distribution (
     id_ville INT,
     quantite_attribuee DECIMAL(12,2) NOT NULL,
     date_dispatch TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    mode_dispatch ENUM('fifo', 'proportionnel', 'priorite_petits') NOT NULL DEFAULT 'fifo',
     FOREIGN KEY (id_don) REFERENCES don(id_don),
     FOREIGN KEY (id_ville) REFERENCES ville(id_ville)
 );

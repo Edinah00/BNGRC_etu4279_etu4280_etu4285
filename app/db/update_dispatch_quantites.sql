@@ -13,6 +13,4 @@ LEFT JOIN (
 SET d.quantite_utilisee = LEAST(d.quantite, COALESCE(x.total_utilise, 0));
 
 
-ALTER TABLE distribution
-MODIFY COLUMN mode_dispatch
-ENUM('fifo', 'proportionnel', 'priorite_petits') NOT NULL DEFAULT 'fifo';
+

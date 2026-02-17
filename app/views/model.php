@@ -95,6 +95,13 @@ $mainClassMap = [];
 $mainId    = $mainIdMap[$page]    ?? '';
 $mainStyle = $mainStyleMap[$page] ?? '';
 $mainClass = $mainClassMap[$page] ?? 'main-content';
+$baseUrl = defined('BASE_URL') ? rtrim(BASE_URL, '/') : '';
+$withBase = static function (string $path) use ($baseUrl): string {
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+    return $baseUrl . (str_starts_with($path, '/') ? $path : '/' . $path);
+};
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -102,9 +109,9 @@ $mainClass = $mainClassMap[$page] ?? 'main-content';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
-    <link rel="stylesheet" href="/assets/css/dashboard.css">
+    <link rel="stylesheet" href="<?= htmlspecialchars($withBase('/assets/css/dashboard.css'), ENT_QUOTES, 'UTF-8') ?>">
     <?php foreach ($pageCss as $css): ?>
-        <link rel="stylesheet" href="<?= htmlspecialchars($css, ENT_QUOTES, 'UTF-8') ?>">
+        <link rel="stylesheet" href="<?= htmlspecialchars($withBase($css), ENT_QUOTES, 'UTF-8') ?>">
     <?php endforeach; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +123,7 @@ $mainClass = $mainClassMap[$page] ?? 'main-content';
             <div class="sidebar-header">
                 <div class="logo-container">
                     <div class="logo-badge">
-                        <img src="/assets/images/bngrc.png" alt="Logo BNGRC">
+                        <img src="<?= htmlspecialchars($withBase('/assets/images/bngrc.png'), ENT_QUOTES, 'UTF-8') ?>" alt="Logo BNGRC">
                     </div>
                     <div class="logo-text">
                         <h1>BNGRC</h1>
@@ -130,7 +137,7 @@ $mainClass = $mainClassMap[$page] ?? 'main-content';
                 <ul class="nav-list">
                     <?php foreach ($menuItems as $item): ?>
                         <li class="nav-item<?= $page === $item['key'] ? ' active' : '' ?>">
-                            <a href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>" class="nav-link">
+                            <a href="<?= htmlspecialchars($withBase($item['href']), ENT_QUOTES, 'UTF-8') ?>" class="nav-link">
                                 <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <?= $item['icon'] ?>
                                 </svg>
@@ -163,8 +170,11 @@ $mainClass = $mainClassMap[$page] ?? 'main-content';
 
 
 
+    <script>
+        window.BASE_URL = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
+    </script>
     <?php foreach ($pageJs as $js): ?>
-        <script src="<?= htmlspecialchars($js, ENT_QUOTES, 'UTF-8') ?>"></script>
+        <script src="<?= htmlspecialchars($withBase($js), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endforeach; ?>
 </body>
 </html>

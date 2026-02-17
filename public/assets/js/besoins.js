@@ -16,6 +16,15 @@ var elements = {
   inputPrix: document.getElementById('inputPrix')
 };
 
+function apiUrl(path) {
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
+}
+
 function fmt(n){
     return Number(n||0).toLocaleString('fr-FR');
 }
@@ -73,12 +82,12 @@ function populateSelects(){
         var t = state.types[i];
         var opt1 = document.createElement('option');
         opt1.value = t.id;
-        opt1.textContent = t.libelle;
+        opt1.textContent = t.categorie || t.libelle;
         elements.inputType.appendChild(opt1);
         
         var opt2 = document.createElement('option');
         opt2.value = t.id;
-        opt2.textContent = t.libelle;
+        opt2.textContent = t.categorie || t.libelle;
         elements.filterType.appendChild(opt2);
     }
 }
@@ -176,7 +185,7 @@ function renderTable(){
             if (!confirm('Supprimer ce besoin ?')) return;
             
             var xhr = new XMLHttpRequest();
-            xhr.open('DELETE', '/api/besoins/' + this.dataset.id, true);
+            xhr.open('DELETE', apiUrl('/api/besoins/' + this.dataset.id), true);
             xhr.setRequestHeader('Accept', 'application/json');
             
             xhr.onload = function() {
@@ -210,7 +219,7 @@ function renderTable(){
 
 function loadData(){
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/api/besoins', true);
+  xhr.open('GET', apiUrl('/api/besoins'), true);
   xhr.setRequestHeader('Accept', 'application/json');
   
   xhr.onload = function() {
@@ -245,7 +254,7 @@ function saveBesoin(){
   
   var xhr = new XMLHttpRequest();
   var method = state.editing ? 'PUT' : 'POST';
-  var url = state.editing ? '/api/besoins/' + state.editing.id : '/api/besoins';
+  var url = state.editing ? apiUrl('/api/besoins/' + state.editing.id) : apiUrl('/api/besoins');
   
   xhr.open(method, url, true);
   xhr.setRequestHeader('Accept', 'application/json');

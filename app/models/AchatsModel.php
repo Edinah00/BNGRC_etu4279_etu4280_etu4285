@@ -284,7 +284,7 @@ class AchatsModel
 
     public function getTypesAchetables()
     {
-        $sql = "SELECT id_type AS id, libelle FROM type_besoin WHERE categorie IN ('nature', 'matériaux') ORDER BY id_type ASC";
+        $sql = "SELECT id_type AS id, categorie AS libelle, categorie FROM type_besoin WHERE categorie IN ('nature', 'matériaux') ORDER BY id_type ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -292,7 +292,7 @@ class AchatsModel
 
     private function getBesoinsAchetables($typeId)
     {
-        $sql = "SELECT b.id_type, tb.libelle AS type_besoin, COALESCE(SUM(b.quantite), 0) AS quantite_totale
+        $sql = "SELECT b.id_type, tb.categorie AS type_besoin, b.nom_produit, COALESCE(SUM(b.quantite), 0) AS quantite_totale
                 FROM besoin b
                 JOIN type_besoin tb ON tb.id_type = b.id_type
                 WHERE tb.categorie IN ('nature', 'matériaux')";
@@ -303,8 +303,8 @@ class AchatsModel
             $params[] = $typeId;
         }
 
-        $sql .= " GROUP BY b.id_type, tb.libelle
-                  ORDER BY tb.libelle ASC";
+        $sql .= " GROUP BY b.id_type, tb.categorie, b.nom_produit
+                  ORDER BY tb.categorie ASC, b.nom_produit ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute($params);
         $typeNeeds = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -343,6 +343,7 @@ class AchatsModel
             $rows[] = [
                 'id_type' => $typeId,
                 'type_besoin' => $need['type_besoin'],
+                'nom_produit' => $need['nom_produit'],
                 'quantite_totale' => $needQty,
                 'quantite_recue_distribution' => $coveredByDistribution,
                 'quantite_recue_achat' => $coveredByAchat,
@@ -428,7 +429,7 @@ class AchatsModel
 
         $where = empty($conditions) ? '' : 'WHERE ' . implode(' AND ', $conditions);
 
-        $sqlRows = "SELECT a.id_achat, a.date_achat, v.nom AS ville, tb.libelle AS type_besoin,
+        $sqlRows = "SELECT a.id_achat, a.date_achat, v.nom AS ville, tb.categorie AS type_besoin,
                            a.nom_produit, a.quantite, a.prix_unitaire, a.montant_ht,
                            a.taux_frais, a.montant_frais, a.montant_ttc
                     FROM achat a
@@ -550,7 +551,7 @@ class AchatsModel
 
     private function getTypeAchatable($typeId)
     {
-        $sql = "SELECT id_type, libelle
+        $sql = "SELECT id_type, categorie AS libelle
                 FROM type_besoin
                 WHERE id_type = ? AND categorie IN ('nature', 'matériaux')
                 LIMIT 1";

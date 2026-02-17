@@ -8,7 +8,7 @@ class DonsModel
 {
     public function getAll()
     {
-        $sql = "SELECT d.id_don AS id, d.id_type, t.libelle AS type, t.categorie,
+        $sql = "SELECT d.id_don AS id, d.id_type, t.categorie AS type, t.categorie,
                        d.id_type AS type_id,
                        d.quantite, d.quantite_utilisee,
                        GREATEST(d.quantite - d.quantite_utilisee, 0) AS quantite_restante,
@@ -37,7 +37,7 @@ class DonsModel
 
     public function getTypes()
     {
-        $sql = "SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC";
+        $sql = "SELECT id_type AS id, categorie AS libelle, categorie FROM type_besoin ORDER BY categorie ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

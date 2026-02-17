@@ -48,7 +48,7 @@ class DispatchModel
 
     public function getTypeLabelsMap(): array
     {
-        $sql = "SELECT id_type, libelle FROM type_besoin ORDER BY id_type ASC";
+        $sql = "SELECT id_type, categorie AS libelle FROM type_besoin ORDER BY id_type ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -103,7 +103,7 @@ class DispatchModel
 
     public function getDonsDisponibles(): array
     {
-        $sql = "SELECT d.id_don, d.id_type, tb.libelle AS type_besoin,
+        $sql = "SELECT d.id_don, d.id_type, tb.categorie AS type_besoin,
                        d.quantite AS quantite_totale, d.date_don,
                        d.quantite_utilisee AS quantite_utilisee,
                        GREATEST(d.quantite - d.quantite_utilisee, 0) AS quantite_restante

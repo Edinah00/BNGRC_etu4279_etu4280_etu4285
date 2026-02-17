@@ -12,6 +12,15 @@ var elements = {
   inputDate: document.getElementById('inputDate')
 };
 
+function apiUrl(path) {
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
+}
+
 function fmt(n){
     return Number(n||0).toLocaleString('fr-FR');
 }
@@ -36,7 +45,7 @@ function populateTypes(){
         var t = state.types[i];
         var opt = document.createElement('option');
         opt.value = t.id;
-        opt.textContent = t.libelle;
+        opt.textContent = t.categorie || t.libelle;
         elements.inputType.appendChild(opt);
     }
 }
@@ -112,7 +121,7 @@ function renderTable(){
             if (!confirm('Supprimer ce don ?')) return;
             
             var xhr = new XMLHttpRequest();
-            xhr.open('DELETE', '/api/dons/' + this.dataset.id, true);
+            xhr.open('DELETE', apiUrl('/api/dons/' + this.dataset.id), true);
             xhr.setRequestHeader('Accept', 'application/json');
             
             xhr.onload = function() {
@@ -144,7 +153,7 @@ function renderTable(){
 
 function loadData(){
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/dons', true);
+    xhr.open('GET', apiUrl('/api/dons'), true);
     xhr.setRequestHeader('Accept', 'application/json');
     
     xhr.onload = function() {
@@ -176,7 +185,7 @@ function saveDon(){
     
     var xhr = new XMLHttpRequest();
     var method = state.editing ? 'PUT' : 'POST';
-    var url = state.editing ? '/api/dons/' + state.editing.id : '/api/dons';
+    var url = state.editing ? apiUrl('/api/dons/' + state.editing.id) : apiUrl('/api/dons');
     
     xhr.open(method, url, true);
     xhr.setRequestHeader('Accept', 'application/json');

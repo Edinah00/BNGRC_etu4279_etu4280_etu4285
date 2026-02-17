@@ -44,12 +44,12 @@ class DashboardModel
 
     public function getBesoinsByType()
     {
-        $sql = "SELECT t.libelle AS name, COUNT(b.id_besoin) AS value
+        $sql = "SELECT t.categorie AS name, COUNT(b.id_besoin) AS value
                 FROM type_besoin t
                 LEFT JOIN besoin b ON b.id_type = t.id_type
-                GROUP BY t.id_type, t.libelle
+                GROUP BY t.categorie
                 HAVING COUNT(b.id_besoin) > 0
-                ORDER BY value DESC, t.libelle ASC";
+                ORDER BY value DESC, t.categorie ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

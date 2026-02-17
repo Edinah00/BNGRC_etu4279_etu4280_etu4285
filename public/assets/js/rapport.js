@@ -9,13 +9,22 @@ let typeComparisonChart = null;
 let globalDistributionChart = null;
 let regionalChart = null;
 
+function apiUrl(path) {
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadRapportData();
     updateLastUpdateTime();
 });
 
 function loadRapportData() {
-    fetch('/api/rapport')
+    fetch(apiUrl('/api/rapport'))
         .then(response => response.json())
         .then(result => {
             if (result.success) {

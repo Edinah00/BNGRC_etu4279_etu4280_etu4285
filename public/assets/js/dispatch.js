@@ -62,9 +62,12 @@ function showToast(title, description, isError) {
 }
 
 function apiUrl(path) {
-    var cleanPath = String(path).replace(/^\/+/, '');
-    var base = window.location.pathname.replace(/\/dispatch\/?$/, '/');
-    return base + cleanPath;
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
 }
 
 function setActiveModeButton(mode) {

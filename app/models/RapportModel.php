@@ -49,7 +49,7 @@ class RapportModel
 
     public function getByType()
     {
-        $sql = "SELECT t.libelle AS type,
+        $sql = "SELECT t.categorie AS type,
                        COALESCE(SUM(b.quantite * b.prix_unitaire), 0) AS besoins,
                        COALESCE(SUM(d.quantite * b_avg.prix_moyen), 0) AS dons
                 FROM type_besoin t
@@ -60,7 +60,7 @@ class RapportModel
                     FROM besoin
                     GROUP BY id_type
                 ) b_avg ON b_avg.id_type = t.id_type
-                GROUP BY t.id_type, t.libelle
+                GROUP BY t.categorie
                 ORDER BY besoins DESC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();

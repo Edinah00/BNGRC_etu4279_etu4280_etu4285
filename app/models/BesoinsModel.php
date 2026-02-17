@@ -9,7 +9,7 @@ class BesoinsModel
     public function getAll($villeId = null, $typeId = null)
     {
         $sql = "SELECT b.id_besoin AS id, b.id_ville, v.nom AS ville, b.id_type,
-                       t.libelle AS type, t.categorie, b.nom_produit,
+                       t.categorie AS type, t.categorie, b.nom_produit,
                        b.quantite, b.quantite_satisfaite,
                        GREATEST(b.quantite - b.quantite_satisfaite, 0) AS quantite_restante,
                        b.prix_unitaire, b.date_saisie
@@ -54,7 +54,7 @@ class BesoinsModel
 
     public function getTypes()
     {
-        $sql = "SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC";
+        $sql = "SELECT id_type AS id, categorie AS libelle, categorie FROM type_besoin ORDER BY categorie ASC";
         $stmt = Flight::db()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

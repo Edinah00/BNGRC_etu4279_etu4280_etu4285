@@ -11,6 +11,15 @@ var elements = {
   inputRegion: document.getElementById('inputRegion')
 };
 
+function apiUrl(path) {
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
+}
+
 function openModal(){
     elements.modalOverlay.classList.add('active');
 }
@@ -98,7 +107,7 @@ function renderTable(){
             if (!confirm('Supprimer cette ville ?')) return;
             
             var xhr = new XMLHttpRequest();
-            xhr.open('DELETE', '/api/villes/' + this.dataset.id, true);
+            xhr.open('DELETE', apiUrl('/api/villes/' + this.dataset.id), true);
             xhr.setRequestHeader('Accept', 'application/json');
             
             xhr.onload = function() {
@@ -126,7 +135,7 @@ function renderTable(){
 
 function loadData(){
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/villes', true);
+    xhr.open('GET', apiUrl('/api/villes'), true);
     xhr.setRequestHeader('Accept', 'application/json');
     
     xhr.onload = function() {
@@ -155,7 +164,7 @@ function saveVille(){
     
     var xhr = new XMLHttpRequest();
     var method = state.editing ? 'PUT' : 'POST';
-    var url = state.editing ? '/api/villes/' + state.editing.id : '/api/villes';
+    var url = state.editing ? apiUrl('/api/villes/' + state.editing.id) : apiUrl('/api/villes');
     
     xhr.open(method, url, true);
     xhr.setRequestHeader('Accept', 'application/json');

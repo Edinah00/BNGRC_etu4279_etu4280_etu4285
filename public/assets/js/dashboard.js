@@ -1,6 +1,15 @@
 var barChartInstance = null;
 var pieChartInstance = null;
 
+function apiUrl(path) {
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
+}
+
 function formatNumber(value) {
     return Number(value || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 }
@@ -327,7 +336,7 @@ function initSmoothScroll() {
 
 function loadDashboardData() {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/dashboard', true);
+    xhr.open('GET', apiUrl('/api/dashboard'), true);
     xhr.setRequestHeader('Accept', 'application/json');
     
     xhr.onload = function() {

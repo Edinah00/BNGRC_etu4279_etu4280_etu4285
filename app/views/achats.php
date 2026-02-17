@@ -82,6 +82,7 @@
                 <thead>
                     <tr>
                         <th>Type</th>
+                        <th>Nom produit</th>
                         <th>Qté totale besoins</th>
                         <th>Qté restante</th>
                         <th>Dons restants</th>

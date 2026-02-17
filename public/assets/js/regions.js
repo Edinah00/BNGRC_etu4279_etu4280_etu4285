@@ -10,6 +10,15 @@ var elements = {
   inputNom: document.getElementById('inputNom')
 };
 
+function apiUrl(path) {
+    var base = window.BASE_URL || '';
+    var clean = String(path || '');
+    if (clean.charAt(0) !== '/') {
+        clean = '/' + clean;
+    }
+    return base + clean;
+}
+
 function openModal() {
     elements.modalOverlay.classList.add('active');
 }
@@ -80,7 +89,7 @@ function renderTable() {
             if (!confirm('Supprimer cette region ?')) return;
             
             var xhr = new XMLHttpRequest();
-            xhr.open('DELETE', '/api/regions/' + this.dataset.id, true);
+            xhr.open('DELETE', apiUrl('/api/regions/' + this.dataset.id), true);
             xhr.setRequestHeader('Accept', 'application/json');
             
             xhr.onload = function() {
@@ -108,7 +117,7 @@ function renderTable() {
 
 function loadData() {
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/api/regions', true);
+  xhr.open('GET', apiUrl('/api/regions'), true);
   xhr.setRequestHeader('Accept', 'application/json');
   
   xhr.onload = function() {
@@ -133,7 +142,7 @@ function saveRegion() {
   
   var xhr = new XMLHttpRequest();
   var method = state.editing ? 'PUT' : 'POST';
-  var url = state.editing ? '/api/regions/' + state.editing.id : '/api/regions';
+  var url = state.editing ? apiUrl('/api/regions/' + state.editing.id) : apiUrl('/api/regions');
   
   xhr.open(method, url, true);
   xhr.setRequestHeader('Accept', 'application/json');
