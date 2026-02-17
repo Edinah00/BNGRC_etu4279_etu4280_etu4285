@@ -681,10 +681,6 @@ function onModeButtonClick(event) {
     if (mode) { handleSimulate(mode); }
 }
 
-/* =========================================================================
-   INITIALISATION
-   ========================================================================= */
-
 function init() {
     showEmptyState();
     setActiveModeButton(state.modeDispatch);
