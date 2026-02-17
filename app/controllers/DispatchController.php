@@ -58,7 +58,11 @@ class DispatchController{
                         'quantite_proposee' => (float) $quantityToDistribute,
                         'quantite_max_initiale' => (float) $quantityToDistribute,
                         'don_quantite_totale' => (float) $don['quantite_totale'],
+                        'don_quantite_utilisee' => (float) $don['quantite_utilisee'],
                         'don_quantite_restante_avant' => (float) $don['quantite_restante'],
+                        'besoin_quantite_demandee' => (float) $need['quantite_demandee'],
+                        'besoin_quantite_satisfaite' => (float) $need['quantite_satisfaite'],
+                        'besoin_quantite_restante' => (float) $need['quantite_restante'],
                         'don_label' => sprintf(
                             'Don #%d (%.2f %s)',
                             (int) $don['id_don'],
@@ -269,6 +273,7 @@ class DispatchController{
                 $model->createDistribution(
                     $row['id_don'],
                     $row['id_ville'],
+                    $row['id_type'],
                     $row['quantite_proposee']
                 );
             }
@@ -293,6 +298,23 @@ class DispatchController{
         }
     }
 
+    public function resetData(){
+        try {
+            $model = new DispatchModel();
+            $model->resetBesoinsEtDons();
+
+            $this->json([
+                'success' => true,
+                'message' => 'Données besoins et dons réinitialisées.',
+            ]);
+        } catch (Exception $e) {
+            $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la réinitialisation: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     private function buildSummary(array $draftRows, array $dons){
         $totalQuantity = 0.0;
         $donDistributed = [];
@@ -313,13 +335,16 @@ class DispatchController{
             $idDon = (int) $don['id_don'];
             $distributed = $donDistributed[$idDon] ?? 0.0;
             $total = (float) $don['quantite_totale'];
-            $remaining = max($total - $distributed, 0);
-            $percent = $total > 0 ? round(($distributed / $total) * 100, 2) : 0;
+            $alreadyUsed = (float) $don['quantite_utilisee'];
+            $projectedUsed = $alreadyUsed + $distributed;
+            $remaining = max($total - $projectedUsed, 0);
+            $percent = $total > 0 ? round(($projectedUsed / $total) * 100, 2) : 0;
 
             $donState[] = [
                 'id_don' => $idDon,
                 'type_besoin' => $don['type_besoin'],
                 'quantite_totale' => $total,
+                'quantite_deja_utilisee' => $alreadyUsed,
                 'quantite_distribuee' => $distributed,
                 'quantite_restante' => $remaining,
                 'completion_percent' => $percent,

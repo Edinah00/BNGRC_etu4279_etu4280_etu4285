@@ -86,7 +86,7 @@ function renderTable(){
             state.editing = ville;
             elements.modalTitle.textContent = 'Modifier une ville';
             elements.inputNom.value = ville.nom;
-            elements.inputRegion.value = ville.region_id;
+            elements.inputRegion.value = ville.id_region;
             openModal();
         });
         

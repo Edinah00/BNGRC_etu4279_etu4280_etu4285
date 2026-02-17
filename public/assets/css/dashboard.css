@@ -9,11 +9,11 @@
     --color-tertiary: #1D546C;
     --color-light: #F4F4F4;
     
-    /* Accent & Status Colors */
-    --color-accent: #2980B9;
-    --color-success: #27AE60;
-    --color-warning: #F39C12;
-    --color-danger: #E74C3C;
+    /* Accent & Status Colors (Blue Palette Only) */
+    --color-accent: #1D546C;
+    --color-success: #1A3D64;
+    --color-warning: #1D546C;
+    --color-danger: #0C2B4E;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #0C2B4E 0%, #1A3D64 50%, #1D546C 100%);

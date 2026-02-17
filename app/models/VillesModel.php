@@ -41,9 +41,30 @@ class VillesModel
 
     public function delete($id)
     {
-        $sql = "DELETE FROM ville WHERE id_ville = ?";
-        $stmt = Flight::db()->prepare($sql);
-        return $stmt->execute([$id]);
+        $db = Flight::db();
+        $db->beginTransaction();
+
+        try {
+            $stmt = $db->prepare("DELETE FROM distribution WHERE id_ville = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $db->prepare("DELETE FROM achat WHERE id_ville = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $db->prepare("DELETE FROM besoin WHERE id_ville = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $db->prepare("DELETE FROM ville WHERE id_ville = ?");
+            $stmt->execute([$id]);
+
+            $db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
     }
 }
 ?>

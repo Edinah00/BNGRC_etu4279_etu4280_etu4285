@@ -85,6 +85,13 @@ class RapportModel
 
     public function getByCity($limit = 20)
     {
+        $limit = (int) $limit;
+        if ($limit < 0) {
+            $limit = 0;
+        } elseif ($limit > 1000) {
+            $limit = 1000;
+        }
+
         $sql = "SELECT v.nom AS ville, r.nom AS region,
                        COUNT(b.id_besoin) AS besoins_count,
                        COALESCE(SUM(b.quantite * b.prix_unitaire), 0) AS besoins_total
@@ -93,14 +100,21 @@ class RapportModel
                 LEFT JOIN besoin b ON b.id_ville = v.id_ville
                 GROUP BY v.id_ville, v.nom, r.nom
                 ORDER BY besoins_total DESC
-                LIMIT ?";
+                LIMIT " . $limit;
         $stmt = Flight::db()->prepare($sql);
-        $stmt->execute([$limit]);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getTimeline($days = 30)
     {
+        $days = (int) $days;
+        if ($days < 1) {
+            $days = 30;
+        } elseif ($days > 3650) {
+            $days = 3650;
+        }
+
         $sql = "SELECT DATE(date_don) AS date,
                        COALESCE(SUM(d.quantite * p.prix_moyen), 0) AS dons_valeur,
                        COUNT(d.id_don) AS dons_count
@@ -110,11 +124,11 @@ class RapportModel
                     FROM besoin
                     GROUP BY id_type
                 ) p ON p.id_type = d.id_type
-                WHERE date_don >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                WHERE date_don >= DATE_SUB(CURDATE(), INTERVAL " . $days . " DAY)
                 GROUP BY DATE(date_don)
                 ORDER BY date ASC";
         $stmt = Flight::db()->prepare($sql);
-        $stmt->execute([$days]);
+        $stmt->execute();
         $dons = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $sql = "SELECT DATE(dist.date_dispatch) AS date,
@@ -127,11 +141,11 @@ class RapportModel
                     FROM besoin
                     GROUP BY id_type
                 ) p ON p.id_type = d.id_type
-                WHERE dist.date_dispatch >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                WHERE dist.date_dispatch >= DATE_SUB(CURDATE(), INTERVAL " . $days . " DAY)
                 GROUP BY DATE(dist.date_dispatch)
                 ORDER BY date ASC";
         $stmt = Flight::db()->prepare($sql);
-        $stmt->execute([$days]);
+        $stmt->execute();
         $distributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return [

@@ -1,8 +1,8 @@
 const COLORS = {
-    primary: '#3E5F44',
-    secondary: '#5E936C',
-    accent: '#93DA97',
-    light: '#E8FFD7'
+    primary: '#0C2B4E',
+    secondary: '#1A3D64',
+    accent: '#1D546C',
+    light: '#F4F4F4'
 };
 
 let typeComparisonChart = null;
@@ -37,7 +37,7 @@ function updateSummaryCards(summary) {
         { name: 'Besoins totaux', value: summary.besoins_totaux, color: COLORS.primary },
         { name: 'Dons reçus', value: summary.dons_recus, color: COLORS.secondary },
         { name: 'Distribués', value: summary.distribues, color: COLORS.accent },
-        { name: 'Restants', value: summary.restants, color: COLORS.light }
+        { name: 'Restants', value: summary.restants, color: COLORS.secondary }
     ];
 
     const container = document.getElementById('summaryCards');

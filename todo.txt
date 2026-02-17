@@ -1,0 +1,551 @@
+Objectifs
+    Conception de base de données, Requêtes SQL , Applications web
+
+Partie 1 :
+
+Preparation MPIARO
+    OK Repository sur Git
+    OK config.php (connexion DB)
+    OK BASE_URL
+    OK routes.php
+            welcome
+    OK style.css
+    OK modele pour navbar et footer principal
+    PUSH 
+Partie 1:
+
+Page 1: BENEFICES (LiBASE_URLste par periode) 
+    PULL
+        BASE MPIARO
+            OK CREATE TABLE 
+                livreurs_liv
+                vehicules_liv
+                zones_livraison_liv
+                entrepot_liv
+                colis_liv
+
+            OK CREATE TABLE livraisons_liv
+
+            OK CREATE Vue SQL vue_benefices_livraisons_liv
+    PUSH 
+    Model EDINAH
+    PULL
+        OK - Creer Benefit.php
+        OK - (Flight::get('db'))
+        OK - getByPeriod(day | month | year)
+        OK - getDetails() (Mampiasa ilay view)
+        OK - getBeneficesByVehicule()
+    PUSH 
+    Controller EDINAH
+    PULL
+        OK - Creer BenefitController.php
+        OK - Methode index() : affichage global
+        OK - Methode byPeriod($type)
+        OK - Gestion des filtres jour / mois / annee
+    PUSH 
+    Routes MPIAROBASE_URL
+    PULL
+        OK - benefits  
+        OK - benefits/period/@type
+    PUSH 
+    View MPIARO
+    PULL
+        OK - index.php
+            OK Tab des benefices, 
+            OK Boutons filtres periode,
+            OK Affichage benefices
+            OK Calcul marge en pourcentage
+
+        OK - CSS
+    PUSH 
+Page 2 : Liste des livraisons 
+    OK BASE EDINAH
+        Data 
+    OK Model EDINAH
+    PULL
+        OK - getAll() Misy JOIN
+    PUSH 
+    OK Controller MPIARO
+    PULL
+        OK - Creer DeliveryController.php
+        OK - Methode index() : affichage global
+    PUSH 
+    OK Routes EDINAH
+    PULL
+        OK - /deliveries 
+    PUSH 
+    OK View MPIARO
+    PULL
+        OK - index.php
+                tab des livraisons avec bouton VOIR pour chaque detail de livraison
+        OK - CSS
+    PUSH 
+
+Page 3 : Detail de livraison
+    BASE MPIARO
+        Data 
+    OK Model EDINAH
+    PULL
+        OK - getById($id)
+        OK - updateStatus($id, $status) (@ ilay modif status livraison)
+        OK - getLivreurs()
+        OK - getVehicules()
+        OK - getZones()
+    PUSH 
+    Controller MPIARO
+    PULL
+        OK - Ajout dans DeliveryController.php:
+            OK show($id)
+    Routes MPIARO
+    PULL
+        OK - /deliveries/@id:[0-9]+    
+        OK - /deliveries/@id:[0-9]+/update-status
+    PUSH 
+    View EDINAH
+    PULL
+        OK - show.php
+            detail des livraisons plus options pour modifier status
+        OK - CSS
+    PUSH 
+Page 4 : Page de création de livraison
+    BASE
+        
+    Model EDINAH
+    PULL
+        OK - create($data) (misy transaction) 
+    PUSH 
+    Controller MPIARO
+    PULL
+        OK - create() : formulaire
+        OK - store() : insertion
+    PUSH 
+    Routes MPIARO
+    PULL
+        OK - /deliveries/create
+        OK - /deliveries/store
+    PUSH 
+    View EDINAH
+    PULL
+        OK - create.php
+    PUSH 
+
+Partie 2 :
+
+Données initiales
+    BASE MPIARO
+
+            PULL
+
+            OK Insertion de 10 véhicules
+
+            OK Insertion de 12 livreurs / chauffeurs
+
+            OK 5 livreurs/chauffeurs à 15000 Ar / livraison
+
+            OK 3 livreurs/chauffeurs à 18000 Ar / livraison
+
+            OK 4 livreurs/chauffeurs à 20000 Ar / livraison
+
+            OK Insertion de 5 zones de livraison
+
+            OK 3 zones à 12,5 %
+
+            OK 2 zones à 0 %
+            PUSH
+
+Gestion du supplément par zone
+    BASE MPIARO
+
+            PULL
+
+            OK Mise en place du supplément (%) selon les zones de livraison
+            PUSH
+
+            Page : Gestion des zones de livraison
+            Model EDINAH
+
+            OK Mise en place du supplément (%) selon les zones de livraison
+            PUSH
+
+Page : Gestion des zones de livraiso
+    Model EDINAH
+
+            PULL
+
+            OK getAllZones()
+
+            OK createZone($data)
+
+            OK updateZone($id, $data)
+
+            OK deleteZone($id)
+            PUSH
+
+    Controller MPIARO
+
+            PULL
+
+            OK Creer ZoneCon
+            PULL
+
+            OK Mise en place du supplément (%) selon les zones de livraison
+            PUSH
+
+Page : Gestion des zones de livraison
+        Model EDINAH
+
+            PULL
+
+            OK getAllZones()
+            PULL
+
+            OK Mise en place du supplément (%) selon les zones de livraison
+            PUSH
+
+Page : Gestion des zones de livraison
+    Model EDINAH
+
+            PULL
+
+            OK getAllZones()
+
+            OK createZone($data)
+
+            OK updateZone($id, $data)
+
+            OK deleteZone($id)
+            PUSH
+
+    Controller MPIARO
+
+            PULL
+
+            OK Creer ZoneController.php
+
+            OK Methode index() : liste des zones
+
+            OK Methode create() : formulaire d’ajout
+
+            OK Methode store() : insertion
+
+            OK Methode edit($id) : formulaire modification
+
+            OK Methode update($id)
+
+            OK Methode delete($id)
+            PUSH
+
+    Routes MPIARO
+
+            PULL
+
+            OK /zones
+
+            OK /zones/create
+
+            OK /zones/store
+
+            OK /zones/edit/@id
+
+            OK /zones/update/@id
+
+            OK /zones/delete/@id
+            PUSH
+
+PULL
+
+    View EDINAH
+
+            PULL
+
+            OK index.php (liste des zones)
+
+            OK create.php (ajout zone)
+
+            OK edit.php (modification zone)
+
+            OK CSS
+            PUSH
+
+Menu spécial : Suppression de toutes les livraisons
+    Controller MPIARO
+
+            PULL
+
+            PULL
+
+            OK Mise en place du supplément (%) selon les zones de livraison
+            PUSH
+
+Page : Gestion des zones de livraison
+    Model EDINAH
+
+            PULL
+
+            OK getAllZones()
+
+            OK createZone($data)
+
+            OK updateZone($id, $data)
+
+            OK deleteZone($id)
+            PUSH
+
+    Controller MPIARO
+
+            PULL
+
+            OK Creer ZoneController.php
+
+            OK Methode index() : liste des zones
+
+            OK Methode create() : formulaire d’ajout
+
+            OK Methode store() : insertion
+
+            OK Methode edit($id) : formulaire modification
+
+            OK Methode update($id)
+
+            OK Methode delete($id)
+            PUSH
+
+    Routes MPIARO
+
+        PULL
+
+            OK /zones
+
+            OK /zones/create
+
+            OK /zones/store
+
+            OK /zones/edit/@id
+
+            OK /zones/update/@id
+
+            OK /zones/delete/@id
+        PUSH
+
+    View EDINAH
+
+        PULL
+
+            OK index.php (liste des zones)
+
+            OK create.php (ajout zone)
+
+            OK edit.php (modification zone)
+
+            OK CSS
+        PUSH
+
+Menu spécial : Suppression de toutes les livraisons
+    Controller MPIARO
+
+        PULL
+
+            OK Methode deleteAllDeliveries()
+
+            OK Vérification du code de confirmation (9999) avant suppression
+        PUSH
+
+    Routes MPIARO
+
+        PULL
+
+            OK /deliveries/delete-all
+        PUSH
+
+    View EDINAH
+
+        PULL
+
+            OK Menu spécial
+
+            OK Formulaire de confirmation avec code 9999
+
+            OK Message de confirmation / erreur
+        PUSH
+            OK Methode deleteAllDeliveries()
+
+            OK Vérification du code de confirmation (9999) avant suppression
+        PUSH
+            OK Methode deleteAllDeliveries()
+
+            OK Vérific
+    Routes MPIARO
+
+        PULL
+
+            OK /deliveries/delete-all
+        PUSH
+
+View EDINAH
+
+        PULL
+
+            OK Menu spécial
+
+            OK Formulaire de confirmation avec code 9999
+
+            OK Message de confirmation / erreur
+        PUSH
+
+            OK createZone($data)
+
+            OK updateZone($id, $data)
+
+            OK deleteZone($id)
+        PUSH
+
+    Controller MPIARO
+
+        PULL
+
+            OK Creer ZoneController.php
+
+            OK Methode index() : liste des zones
+
+            OK Methode create() : formulaire d’ajout
+
+            OK Methode store() : insertion
+
+            OK Methode edit($id) : formulaire modification
+
+            OK Methode update($id)
+
+            OK Methode delete($id)
+        PUSH
+
+    Routes MPIARO
+
+        PULL
+
+            OK /zones
+
+            OK /zones/create
+
+            OK /zones/store
+
+            OK /zones/edit/@id
+
+            OK /zones/update/@id
+
+            OK /zones/delete/@id
+        PUSH
+
+    View EDINAH
+
+        PULL
+
+            OK index.php (liste des zones)
+
+            OK create.php (ajout zone)
+
+            OK edit.php (modification zone)
+
+            OK CSS
+        PUSH
+
+Menu spécial : Suppression de toutes les livraisons
+    Controller MPIARO
+
+        PULL
+
+            OK Methode deleteAllDeliveries()
+
+            OK Vérification du code de confirmation (9999) avant suppression
+        PUSH
+
+    Routes MPIARO
+
+        PULL
+
+            OK /deliveries/delete-all
+        PUSH
+
+        View EDINAH
+
+        PULL
+
+
+            OK Methode deleteAllDeliveries()
+
+            OK Véri
+            OK Menu spécial
+
+            OK Formulaire de confirmation avec code 9999
+
+            OK Message de confirmation / erreur
+
+            OK Methode index() : liste des zones
+
+            OK Methode create() : formulaire d’ajout
+
+            OK Methode store() : insertion
+
+            OK Methode edit($id) : formulaire modification
+
+            OK Methode update($id)
+
+            OK Methode delete($id)
+            PUSH
+
+    Routes MPIARO
+
+        PULL
+
+            OK /zones
+
+            OK /zones/create
+
+            OK /zones/store
+
+            OK /zones/edit/@id
+
+            OK /zones/update/@id
+
+            OK /zones/delete/@id
+        PUSH
+
+    View EDINAH
+
+        PULL
+
+            OK index.php (liste des zones)
+
+            OK create.php (ajout zone)
+
+            OK edit.php (modification zone)
+
+            OK CSS
+        PUSH
+
+Menu spécial : Suppression de toutes les livraisons
+    Controller MPIARO
+
+        PULL
+
+            OK Methode deleteAllDeliveries()
+
+            OK Vérification du code de confirmation (9999) avant suppression
+        PUSH
+
+    Routes MPIARO
+
+        PULL
+
+            OK /deliveries/delete-all
+        PUSH
+
+    View EDINAH
+
+        PULL
+
+            OK Menu spécial
+
+            OK Formulaire de confirmation avec code 9999
+
+            OK Message de confirmation / erreur
+        PUSH

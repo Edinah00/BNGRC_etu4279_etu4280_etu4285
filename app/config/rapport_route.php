@@ -1,43 +1,40 @@
 <?php
-use app\controllers\RapportController;
 
-Flight::route('GET /rapport', function() {
-    $controller = new RapportController();
-    $controller->page();
-});
+use flight\Engine;
 
-Flight::route('GET /api/rapport', function() {
-    $controller = new RapportController();
+$router->get('/rapport', fn() => $app->render('model', ['page' => 'rapport']));
+
+$router->get('/api/rapport', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->index();
 });
 
-Flight::route('GET /api/rapport/summary', function() {
-    $controller = new RapportController();
+$router->get('/api/rapport/summary', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->getSummary();
 });
 
-Flight::route('GET /api/rapport/by-type', function() {
-    $controller = new RapportController();
+$router->get('/api/rapport/by-type', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->getByType();
 });
 
-Flight::route('GET /api/rapport/by-region', function() {
-    $controller = new RapportController();
+$router->get('/api/rapport/by-region', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->getByRegion();
 });
 
-Flight::route('GET /api/rapport/by-city', function() {
-    $controller = new RapportController();
+$router->get('/api/rapport/by-city', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->getByCity();
 });
 
-Flight::route('GET /api/rapport/timeline', function() {
-    $controller = new RapportController();
+$router->get('/api/rapport/timeline', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->getTimeline();
 });
 
-Flight::route('GET /api/rapport/export/pdf', function() {
-    $controller = new RapportController();
+$router->get('/api/rapport/export/pdf', function () {
+    $controller = new \app\controllers\RapportController();
     $controller->exportPdf();
 });
-?>

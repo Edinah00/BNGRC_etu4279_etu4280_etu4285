@@ -1,17 +1,11 @@
 <?php
 
-use app\controllers\DashboardController;
+use flight\Engine;
 
-$router->get('/', function (){
-    Flight::redirect('/dashboard');
-});
+$router->get('/', fn() => $app->render('model', ['page' => 'dashboard']));
+$router->get('/dashboard', fn() => $app->render('model', ['page' => 'dashboard']));
 
-$router->get('/dashboard', function (){
-    $controller = new DashboardController();
-    $controller->index();
-});
-
-$router->get('/api/dashboard', function (){
-    $controller = new DashboardController();
+$router->get('/api/dashboard', function () {
+    $controller = new \app\controllers\DashboardController();
     $controller->data();
 });

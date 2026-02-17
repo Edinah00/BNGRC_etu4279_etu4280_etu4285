@@ -87,8 +87,8 @@ function filtered(){
     var result = [];
     for (var i = 0; i < state.besoins.length; i++) {
         var b = state.besoins[i];
-        var matchVille = state.filterVille === 'all' || String(b.ville_id) === state.filterVille;
-        var matchType = state.filterType === 'all' || String(b.type_id) === state.filterType;
+        var matchVille = state.filterVille === 'all' || String(b.id_ville) === state.filterVille;
+        var matchType = state.filterType === 'all' || String(b.id_type) === state.filterType;
         if (matchVille && matchType) {
             result.push(b);
         }
@@ -122,7 +122,7 @@ function renderTable(){
         tdType.textContent = b.type || '—';
         
         var tdDesc = document.createElement('td');
-        tdDesc.textContent = b.description || '';
+        tdDesc.textContent = b.nom_produit || b.description || '';
         
         var tdQte = document.createElement('td');
         tdQte.textContent = fmt(b.quantite);
@@ -154,9 +154,9 @@ function renderTable(){
             if (!besoin) return;
             state.editing = besoin;
             elements.modalTitle.textContent = 'Modifier un besoin';
-            elements.inputVille.value = besoin.ville_id;
-            elements.inputType.value = besoin.type_id;
-            elements.inputDescription.value = besoin.description;
+            elements.inputVille.value = besoin.id_ville;
+            elements.inputType.value = besoin.id_type;
+            elements.inputDescription.value = besoin.nom_produit || besoin.description || '';
             elements.inputQuantite.value = besoin.quantite;
             elements.inputPrix.value = besoin.prix_unitaire;
             openModal();

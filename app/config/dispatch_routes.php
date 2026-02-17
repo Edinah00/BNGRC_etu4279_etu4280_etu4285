@@ -2,22 +2,17 @@
 
 use app\controllers\DispatchController;
 use app\middlewares\SecurityHeadersMiddleware;
+use flight\Engine;
 use flight\net\Router;
 
-$router->group('', function (Router $router) {
-    $router->get('/dispatch', function () {
-        $controller = new DispatchController();
-        $controller->index();
-        exit();
-    });
+/** @var Engine $app */
 
-    $router->get('/dispach', function () {
-        $controller = new DispatchController();
-        $controller->index();
-        exit();
-    });
+$router->group('', function (Router $router) use ($app) {
+
+    $router->get('/dispatch', fn() => $app->render('model', ['page' => 'dispatch']));
 
     $router->group('/api/dispatch', function (Router $router) {
+
         $router->get('/simulate', function () {
             $controller = new DispatchController();
             $controller->simulate();
@@ -35,5 +30,13 @@ $router->group('', function (Router $router) {
             $controller->validateDraft();
             exit();
         });
+
+        $router->post('/reset-data', function () {
+            $controller = new DispatchController();
+            $controller->resetData();
+            exit();
+        });
+        
     });
+
 }, [SecurityHeadersMiddleware::class]);

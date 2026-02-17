@@ -92,7 +92,7 @@ function renderTable(){
             if (!don) return;
             state.editing = don;
             elements.modalTitle.textContent = 'Modifier un don';
-            elements.inputType.value = don.type_id;
+            elements.inputType.value = don.id_type;
             elements.inputQuantite.value = don.quantite;
             elements.inputDate.value = String(don.date_don).slice(0,10);
             openModal();
