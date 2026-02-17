@@ -6,60 +6,44 @@ var state = {
     summary: null
 };
 
-var elements = {
-    validateBtn: document.getElementById('validateBtn'),
-    resetDataBtn: document.getElementById('resetDataBtn'),
-    cancelBtn: document.getElementById('cancelBtn'),
-    emptyState: document.getElementById('emptyState'),
-    noResultsState: document.getElementById('noResultsState'),
-    simulationResults: document.getElementById('simulationResults'),
-    resultsTitle: document.getElementById('resultsTitle'),
-    resultsTableHead: document.getElementById('resultsTableHead'),
-    resultsTableBody: document.getElementById('resultsTableBody'),
-    summaryBlock: document.getElementById('summaryBlock'),
-    toast: document.getElementById('toast'),
-    toastTitle: document.getElementById('toastTitle'),
-    toastDescription: document.getElementById('toastDescription'),
-    modeButtons: document.querySelectorAll('[data-mode-dispatch]')
+var el = {
+    validateBtn:            document.getElementById('validateBtn'),
+    resetDataBtn:           document.getElementById('resetDataBtn'),
+    cancelBtn:              document.getElementById('cancelBtn'),
+    emptyState:             document.getElementById('emptyState'),
+    noResultsState:         document.getElementById('noResultsState'),
+    simulationResults:      document.getElementById('simulationResults'),
+    resultsTitle:           document.getElementById('resultsTitle'),
+    resultsTableHead:       document.getElementById('resultsTableHead'),
+    resultsTableBody:       document.getElementById('resultsTableBody'),
+    theadFifo:              document.getElementById('theadRowFifo'),
+    theadProportionnel:     document.getElementById('theadRowProportionnel'),
+    theadPrioritePetits:    document.getElementById('theadRowPrioritePetits'),
+    summaryBlock:           document.getElementById('summaryBlock'),
+    summaryNbDistributions: document.querySelector('.summary-nb-distributions'),
+    summaryNbDons:          document.querySelector('.summary-nb-dons'),
+    summaryQteTotale:       document.querySelector('.summary-qte-totale'),
+    summaryNbSatisfaits:    document.querySelector('.summary-nb-satisfaits'),
+    summaryNbPartiels:      document.querySelector('.summary-nb-partiels'),
+    summaryNbZero:          document.querySelector('.summary-nb-zero'),
+    summaryStatDons:        document.querySelector('.summary-stat-dons'),
+    summaryStatSatisfaits:  document.querySelector('.summary-stat-satisfaits'),
+    summaryDonsContainer:   document.getElementById('summaryDonsContainer'),
+    summaryTypesContainer:  document.getElementById('summaryTypesContainer'),
+    toast:                  document.getElementById('toast'),
+    toastTitle:             document.getElementById('toastTitle'),
+    toastDescription:       document.getElementById('toastDescription'),
+    modeButtons:            document.querySelectorAll('[data-mode-dispatch]'),
+    tplRowFifo:             document.getElementById('tpl-row-fifo'),
+    tplRowProportionnel:    document.getElementById('tpl-row-proportionnel'),
+    tplRowPrioritePetits:   document.getElementById('tpl-row-priorite'),
+    tplSummaryDon:          document.getElementById('tpl-summary-don'),
+    tplSummaryType:         document.getElementById('tpl-summary-type')
 };
 
-function setValidateVisible(visible) {
-    if (!elements.validateBtn) return;
-    elements.validateBtn.style.display = visible ? 'inline-flex' : 'none';
-}
-
-function showEmptyState() {
-    elements.emptyState.style.display = 'block';
-    elements.noResultsState.style.display = 'none';
-    elements.simulationResults.style.display = 'none';
-    setValidateVisible(false);
-}
-
-function showNoResultsState() {
-    elements.emptyState.style.display = 'none';
-    elements.noResultsState.style.display = 'block';
-    elements.simulationResults.style.display = 'none';
-    setValidateVisible(false);
-}
-
-function showSimulationResults() {
-    elements.emptyState.style.display = 'none';
-    elements.noResultsState.style.display = 'none';
-    elements.simulationResults.style.display = 'block';
-    setValidateVisible(true);
-}
-
-function showToast(title, description, isError) {
-    elements.toastTitle.textContent = title;
-    elements.toastDescription.textContent = description;
-    elements.toast.style.background = isError
-        ? 'linear-gradient(135deg, #c0392b 0%, #922b21 100%)'
-        : 'linear-gradient(135deg, #27AE60 0%, #229954 100%)';
-    elements.toast.classList.add('show');
-    setTimeout(function() {
-        elements.toast.classList.remove('show');
-    }, 3500);
-}
+/* =========================================================================
+   UTILITAIRES
+   ========================================================================= */
 
 function apiUrl(path) {
     var base = window.BASE_URL || '';
@@ -70,213 +54,33 @@ function apiUrl(path) {
     return base + clean;
 }
 
-function setActiveModeButton(mode) {
-    for (var i = 0; i < elements.modeButtons.length; i++) {
-        var btn = elements.modeButtons[i];
-        var btnMode = btn.getAttribute('data-mode-dispatch');
-        if (btnMode === mode) {
-            btn.classList.add('is-active');
-        } else {
-            btn.classList.remove('is-active');
-        }
-    }
+function cloneTemplate(tpl) {
+    return tpl.content.cloneNode(true).children[0];
 }
 
 function getUsedDonQuantities() {
     var map = {};
     for (var i = 0; i < state.draftRows.length; i++) {
         var row = state.draftRows[i];
-        if (!row.id_don) {
-            continue;
-        }
+        if (!row.id_don) { continue; }
         map[row.id_don] = (map[row.id_don] || 0) + Number(row.quantite_proposee || 0);
     }
     return map;
 }
 
 function getDonLimitById(idDon) {
-    if (!state.summary || !state.summary.dons) {
-        return 0;
-    }
-
+    if (!state.summary || !state.summary.dons) { return 0; }
     for (var i = 0; i < state.summary.dons.length; i++) {
         var don = state.summary.dons[i];
-        if (Number(don.id_don) !== Number(idDon)) {
-            continue;
-        }
-        var total = Number(don.quantite_totale || 0);
-        var alreadyUsed = Number(don.quantite_deja_utilisee || 0);
-        return Math.max(total - alreadyUsed, 0);
+        if (Number(don.id_don) !== Number(idDon)) { continue; }
+        return Math.max(Number(don.quantite_totale || 0) - Number(don.quantite_deja_utilisee || 0), 0);
     }
-
     return 0;
-}
-
-function renderTableHead() {
-    elements.resultsTableHead.textContent = '';
-    var tr = document.createElement('tr');
-
-    if (state.modeDispatch === 'proportionnel') {
-        tr.innerHTML = '<th>Type</th><th>Ville</th><th>Produit</th><th>Besoin restant</th><th>Quantité proposée</th><th>% Satisfaction</th><th>Actions</th>';
-    } else if (state.modeDispatch === 'priorite_petits') {
-        tr.innerHTML = '<th>#</th><th>Type</th><th>Ville</th><th>Produit</th><th>Besoin restant</th><th>Quantité proposée</th><th>% Satisfaction</th><th>Statut</th><th>Actions</th>';
-    } else {
-        tr.innerHTML = '<th>Don</th><th>Don déjà utilisé</th><th>Type</th><th>Ville destinataire</th><th>Besoin déjà satisfait</th><th>Quantité proposée</th><th>Actions</th>';
-    }
-
-    elements.resultsTableHead.appendChild(tr);
-}
-
-function renderTableFifo() {
-    elements.resultsTitle.textContent = 'Résultats FIFO (Simulation) - ' + state.draftRows.length + ' distribution(s)';
-    elements.resultsTableBody.textContent = '';
-
-    for (var i = 0; i < state.draftRows.length; i++) {
-        var row = state.draftRows[i];
-        var tr = document.createElement('tr');
-        tr.dataset.index = i;
-
-        var tdDon = document.createElement('td');
-        tdDon.textContent = row.don_label;
-
-        var tdDonUsed = document.createElement('td');
-        tdDonUsed.textContent = Number(row.don_quantite_utilisee || 0).toFixed(2) + ' / ' + Number(row.don_quantite_totale || 0).toFixed(2);
-
-        var tdType = document.createElement('td');
-        var badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = row.type_besoin;
-        tdType.appendChild(badge);
-
-        var tdVille = document.createElement('td');
-        var selectVille = document.createElement('select');
-        selectVille.dataset.action = 'city';
-        selectVille.dataset.index = i;
-
-        var cities = state.eligibleCitiesByType[row.id_type] || [];
-        for (var j = 0; j < cities.length; j++) {
-            var city = cities[j];
-            var option = document.createElement('option');
-            option.value = city.id_ville;
-            option.textContent = city.nom + ' (' + Number(city.besoin_restant).toFixed(2) + ')';
-            if (Number(city.id_ville) === Number(row.id_ville)) {
-                option.selected = true;
-            }
-            selectVille.appendChild(option);
-        }
-        tdVille.appendChild(selectVille);
-
-        var tdNeedSatisfied = document.createElement('td');
-        tdNeedSatisfied.textContent = Number(row.besoin_quantite_satisfaite || 0).toFixed(2) + ' / ' + Number(row.besoin_quantite_demandee || 0).toFixed(2);
-
-        var tdQuantite = document.createElement('td');
-        var inputQte = document.createElement('input');
-        inputQte.type = 'number';
-        inputQte.min = '0';
-        inputQte.step = '0.01';
-        inputQte.max = row.quantite_max_initiale;
-        inputQte.value = row.quantite_proposee;
-        inputQte.dataset.action = 'quantity';
-        inputQte.dataset.index = i;
-
-        var small = document.createElement('small');
-        small.style.display = 'block';
-        small.style.opacity = '0.7';
-        small.textContent = 'max initial: ' + Number(row.quantite_max_initiale).toFixed(2);
-
-        tdQuantite.appendChild(inputQte);
-        tdQuantite.appendChild(small);
-
-        var tdActions = document.createElement('td');
-        var btnRemove = document.createElement('button');
-        btnRemove.type = 'button';
-        btnRemove.dataset.action = 'remove';
-        btnRemove.dataset.index = i;
-        btnRemove.className = 'btn-primary';
-        btnRemove.style.padding = '0.4rem 0.7rem';
-        btnRemove.style.background = '#c0392b';
-        btnRemove.textContent = 'Supprimer';
-        tdActions.appendChild(btnRemove);
-
-        tr.appendChild(tdDon);
-        tr.appendChild(tdDonUsed);
-        tr.appendChild(tdType);
-        tr.appendChild(tdVille);
-        tr.appendChild(tdNeedSatisfied);
-        tr.appendChild(tdQuantite);
-        tr.appendChild(tdActions);
-
-        elements.resultsTableBody.appendChild(tr);
-    }
-}
-
-function renderTableProportionnel() {
-    elements.resultsTitle.textContent = 'Résultats proportionnels (Simulation) - ' + state.draftRows.length + ' proposition(s)';
-    elements.resultsTableBody.textContent = '';
-
-    for (var i = 0; i < state.draftRows.length; i++) {
-        var row = state.draftRows[i];
-        var tr = document.createElement('tr');
-        tr.dataset.index = i;
-
-        var tdType = document.createElement('td');
-        var badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = row.type_besoin;
-        tdType.appendChild(badge);
-
-        var tdVille = document.createElement('td');
-        tdVille.textContent = row.ville;
-
-        var tdProduit = document.createElement('td');
-        tdProduit.textContent = row.nom_produit;
-
-        var tdBesoin = document.createElement('td');
-        tdBesoin.textContent = String(Number(row.besoin_restant));
-
-        var tdQuantite = document.createElement('td');
-        var inputQte = document.createElement('input');
-        inputQte.type = 'number';
-        inputQte.min = '0';
-        inputQte.step = '1';
-        inputQte.max = row.besoin_restant;
-        inputQte.value = row.quantite_proposee;
-        inputQte.dataset.action = 'quantity';
-        inputQte.dataset.index = i;
-        tdQuantite.appendChild(inputQte);
-
-        var tdPct = document.createElement('td');
-        var pct = Number(row.besoin_restant) > 0
-            ? ((Number(row.quantite_proposee) / Number(row.besoin_restant)) * 100).toFixed(1)
-            : '0.0';
-        tdPct.textContent = pct + '%';
-
-        var tdActions = document.createElement('td');
-        var btnReset = document.createElement('button');
-        btnReset.type = 'button';
-        btnReset.dataset.action = 'reset';
-        btnReset.dataset.index = i;
-        btnReset.className = 'btn-primary';
-        btnReset.style.padding = '0.4rem 0.7rem';
-        btnReset.textContent = 'Réinitialiser';
-        tdActions.appendChild(btnReset);
-
-        tr.appendChild(tdType);
-        tr.appendChild(tdVille);
-        tr.appendChild(tdProduit);
-        tr.appendChild(tdBesoin);
-        tr.appendChild(tdQuantite);
-        tr.appendChild(tdPct);
-        tr.appendChild(tdActions);
-
-        elements.resultsTableBody.appendChild(tr);
-    }
 }
 
 function getPrioriteStatus(row) {
     var besoin = Number(row.besoin_restant || 0);
-    var qte = Number(row.quantite_proposee || 0);
-
+    var qte    = Number(row.quantite_proposee || 0);
     if (qte >= besoin && besoin > 0) {
         return { key: 'satisfait', label: 'Satisfait', className: 'badge-satisfait' };
     }
@@ -285,97 +89,251 @@ function getPrioriteStatus(row) {
     }
     return { key: 'zero', label: 'Non satisfait', className: 'badge-zero' };
 }
-function renderTablePrioritePetits() {
-    elements.resultsTitle.textContent = 'Résultats priorité petits (Simulation) - ' + state.draftRows.length + ' proposition(s)';
-    elements.resultsTableBody.textContent = '';
 
-    for (var i = 0; i < state.draftRows.length; i++) {
-        var row = state.draftRows[i];
-        var status = getPrioriteStatus(row);
-        var tr = document.createElement('tr');
-        tr.dataset.index = i;
-        tr.className = status.key === 'satisfait'
-            ? 'row-success'
-            : (status.key === 'partiel' ? 'row-warning' : 'row-danger');
+function calcPct(qte, besoin) {
+    return Number(besoin) > 0
+        ? ((Number(qte) / Number(besoin)) * 100).toFixed(1) + '%'
+        : '0.0%';
+}
 
-        var tdIndex = document.createElement('td');
-        tdIndex.textContent = String(i + 1);
+/* =========================================================================
+   ÉTATS D'AFFICHAGE
+   ========================================================================= */
 
-        var tdType = document.createElement('td');
-        var badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = row.type_besoin;
-        tdType.appendChild(badge);
+function setValidateVisible(visible) {
+    if (!el.validateBtn) { return; }
+    el.validateBtn.style.display = visible ? 'inline-flex' : 'none';
+}
 
-        var tdVille = document.createElement('td');
-        tdVille.textContent = row.ville;
+function showEmptyState() {
+    el.emptyState.style.display        = 'block';
+    el.noResultsState.style.display    = 'none';
+    el.simulationResults.style.display = 'none';
+    setValidateVisible(false);
+}
 
-        var tdProduit = document.createElement('td');
-        tdProduit.textContent = row.nom_produit;
+function showNoResultsState() {
+    el.emptyState.style.display        = 'none';
+    el.noResultsState.style.display    = 'block';
+    el.simulationResults.style.display = 'none';
+    setValidateVisible(false);
+}
 
-        var tdBesoin = document.createElement('td');
-        tdBesoin.textContent = String(Number(row.besoin_restant));
+function showSimulationResults() {
+    el.emptyState.style.display        = 'none';
+    el.noResultsState.style.display    = 'none';
+    el.simulationResults.style.display = 'block';
+    setValidateVisible(true);
+}
 
-        var tdQuantite = document.createElement('td');
-        var inputQte = document.createElement('input');
-        inputQte.type = 'number';
-        inputQte.min = '0';
-        inputQte.step = '1';
-        inputQte.max = row.besoin_restant;
-        inputQte.value = row.quantite_proposee;
-        inputQte.dataset.action = 'quantity';
-        inputQte.dataset.index = i;
-        tdQuantite.appendChild(inputQte);
+function showToast(title, description, isError) {
+    el.toastTitle.textContent       = title;
+    el.toastDescription.textContent = description;
+    el.toast.style.background = isError
+        ? 'linear-gradient(135deg, #c0392b 0%, #922b21 100%)'
+        : 'linear-gradient(135deg, #27AE60 0%, #229954 100%)';
+    el.toast.classList.add('show');
+    setTimeout(function () { el.toast.classList.remove('show'); }, 3500);
+}
 
-        var tdPct = document.createElement('td');
-        var pct = Number(row.besoin_restant) > 0
-            ? ((Number(row.quantite_proposee) / Number(row.besoin_restant)) * 100).toFixed(1)
-            : '0.0';
-        tdPct.textContent = pct + '%';
-
-        var tdStatus = document.createElement('td');
-        var badgeStatus = document.createElement('span');
-        badgeStatus.className = status.className;
-        badgeStatus.textContent = status.label;
-        tdStatus.appendChild(badgeStatus);
-
-        var tdActions = document.createElement('td');
-        var btnReset = document.createElement('button');
-        btnReset.type = 'button';
-        btnReset.dataset.action = 'reset';
-        btnReset.dataset.index = i;
-        btnReset.className = 'btn-primary';
-        btnReset.style.padding = '0.4rem 0.7rem';
-        btnReset.textContent = 'Réinitialiser';
-        tdActions.appendChild(btnReset);
-
-        tr.appendChild(tdIndex);
-        tr.appendChild(tdType);
-        tr.appendChild(tdVille);
-        tr.appendChild(tdProduit);
-        tr.appendChild(tdBesoin);
-        tr.appendChild(tdQuantite);
-        tr.appendChild(tdPct);
-        tr.appendChild(tdStatus);
-        tr.appendChild(tdActions);
-
-        elements.resultsTableBody.appendChild(tr);
+function setActiveModeButton(mode) {
+    for (var i = 0; i < el.modeButtons.length; i++) {
+        var btn = el.modeButtons[i];
+        if (btn.getAttribute('data-mode-dispatch') === mode) {
+            btn.classList.add('is-active');
+        } else {
+            btn.classList.remove('is-active');
+        }
     }
 }
+
+/* =========================================================================
+   EN-TÊTES DE TABLE
+   ========================================================================= */
+
+function renderTableHead() {
+    el.theadFifo.style.display            = 'none';
+    el.theadProportionnel.style.display   = 'none';
+    el.theadPrioritePetits.style.display  = 'none';
+
+    if (state.modeDispatch === 'proportionnel') {
+        el.theadProportionnel.style.display = '';
+    } else if (state.modeDispatch === 'priorite_petits') {
+        el.theadPrioritePetits.style.display = '';
+    } else {
+        el.theadFifo.style.display = '';
+    }
+}
+
+/* =========================================================================
+   CONSTRUCTION DES LIGNES — FIFO
+   ========================================================================= */
+
+function buildRowFifo(row, index) {
+    var tr = cloneTemplate(el.tplRowFifo);
+    tr.dataset.index = index;
+
+    tr.querySelector('.td-don-label').textContent   = row.don_label;
+    tr.querySelector('.td-don-used').textContent    = Number(row.don_quantite_utilisee || 0).toFixed(2) + ' / ' + Number(row.don_quantite_totale || 0).toFixed(2);
+    tr.querySelector('.td-type .badge').textContent = row.type_besoin;
+    tr.querySelector('.td-need-satisfied').textContent =
+        Number(row.besoin_quantite_satisfaite || 0).toFixed(2) + ' / ' + Number(row.besoin_quantite_demandee || 0).toFixed(2);
+
+    var input = tr.querySelector('input[data-action="quantity"]');
+    input.max   = row.quantite_max_initiale;
+    input.value = row.quantite_proposee;
+    input.dataset.index = index;
+
+    tr.querySelector('.input-max-hint').textContent = 'max initial: ' + Number(row.quantite_max_initiale).toFixed(2);
+
+    var select = tr.querySelector('select[data-action="city"]');
+    select.dataset.index = index;
+    var cities = state.eligibleCitiesByType[row.id_type] || [];
+    for (var j = 0; j < cities.length; j++) {
+        var city   = cities[j];
+        var option = document.createElement('option');
+        option.value       = city.id_ville;
+        option.textContent = city.nom + ' (' + Number(city.besoin_restant).toFixed(2) + ')';
+        if (Number(city.id_ville) === Number(row.id_ville)) { option.selected = true; }
+        select.appendChild(option);
+    }
+
+    var btnRemove = tr.querySelector('button[data-action="remove"]');
+    btnRemove.dataset.index = index;
+
+    return tr;
+}
+
+/* =========================================================================
+   CONSTRUCTION DES LIGNES — PROPORTIONNEL
+   ========================================================================= */
+
+function buildRowProportionnel(row, index) {
+    var tr = cloneTemplate(el.tplRowProportionnel);
+    tr.dataset.index = index;
+
+    tr.querySelector('.td-type .badge').textContent  = row.type_besoin;
+    tr.querySelector('.td-ville').textContent         = row.ville;
+    tr.querySelector('.td-produit').textContent       = row.nom_produit;
+    tr.querySelector('.td-besoin-restant').textContent = String(Number(row.besoin_restant));
+    tr.querySelector('.td-pct').textContent            = calcPct(row.quantite_proposee, row.besoin_restant);
+
+    var input = tr.querySelector('input[data-action="quantity"]');
+    input.max         = row.besoin_restant;
+    input.value       = row.quantite_proposee;
+    input.dataset.index = index;
+
+    tr.querySelector('button[data-action="reset"]').dataset.index = index;
+
+    return tr;
+}
+
+/* =========================================================================
+   CONSTRUCTION DES LIGNES — PRIORITÉ PETITS
+   ========================================================================= */
+
+function buildRowPrioritePetits(row, index) {
+    var tr     = cloneTemplate(el.tplRowPrioritePetits);
+    var status = getPrioriteStatus(row);
+
+    tr.dataset.index = index;
+    tr.className    += ' ' + (status.key === 'satisfait' ? 'row-success' : (status.key === 'partiel' ? 'row-warning' : 'row-danger'));
+
+    tr.querySelector('.td-index').textContent            = String(index + 1);
+    tr.querySelector('.td-type .badge').textContent      = row.type_besoin;
+    tr.querySelector('.td-ville').textContent             = row.ville;
+    tr.querySelector('.td-produit').textContent           = row.nom_produit;
+    tr.querySelector('.td-besoin-restant').textContent    = String(Number(row.besoin_restant));
+    tr.querySelector('.td-pct').textContent               = calcPct(row.quantite_proposee, row.besoin_restant);
+
+    var statusBadge = tr.querySelector('.status-badge');
+    statusBadge.className   = 'status-badge ' + status.className;
+    statusBadge.textContent = status.label;
+
+    var input = tr.querySelector('input[data-action="quantity"]');
+    input.max         = row.besoin_restant;
+    input.value       = row.quantite_proposee;
+    input.dataset.index = index;
+
+    tr.querySelector('button[data-action="reset"]').dataset.index = index;
+
+    return tr;
+}
+
+/* =========================================================================
+   RENDU DE LA TABLE
+   ========================================================================= */
 
 function renderTable() {
     renderTableHead();
-    if (state.modeDispatch === 'proportionnel') {
-        renderTableProportionnel();
-    } else if (state.modeDispatch === 'priorite_petits') {
-        renderTablePrioritePetits();
-    } else {
-        renderTableFifo();
+
+    var modeLabels = {
+        fifo:            'FIFO (Simulation)',
+        proportionnel:   'proportionnels (Simulation)',
+        priorite_petits: 'priorité petits (Simulation)'
+    };
+    el.resultsTitle.textContent = 'Résultats ' + (modeLabels[state.modeDispatch] || state.modeDispatch) + ' — ' + state.draftRows.length + ' proposition(s)';
+
+    el.resultsTableBody.textContent = '';
+    var fragment = document.createDocumentFragment();
+
+    for (var i = 0; i < state.draftRows.length; i++) {
+        var row = state.draftRows[i];
+        var tr;
+        if (state.modeDispatch === 'proportionnel') {
+            tr = buildRowProportionnel(row, i);
+        } else if (state.modeDispatch === 'priorite_petits') {
+            tr = buildRowPrioritePetits(row, i);
+        } else {
+            tr = buildRowFifo(row, i);
+        }
+        fragment.appendChild(tr);
     }
+
+    el.resultsTableBody.appendChild(fragment);
 }
 
+/* =========================================================================
+   RÉSUMÉ — BLOCS PARTAGÉS
+   ========================================================================= */
+
+function renderSummaryTypesContainer(showRatio) {
+    el.summaryTypesContainer.textContent = '';
+    var types = state.summary && state.summary.types ? state.summary.types : [];
+    var fragment = document.createDocumentFragment();
+
+    for (var j = 0; j < types.length; j++) {
+        var t   = types[j];
+        var box = cloneTemplate(el.tplSummaryType);
+
+        box.querySelector('.type-title').textContent          = t.type_besoin;
+        box.querySelector('.type-don-disponible').textContent = 'Don disponible: ' + t.don_disponible;
+        box.querySelector('.type-besoin-total').textContent   = 'Besoin total: ' + t.besoin_total;
+
+        var ratioEl = box.querySelector('.type-ratio');
+        if (showRatio) {
+            ratioEl.style.display = '';
+            ratioEl.textContent   = 'Ratio: ' + Number(t.ratio_pct).toFixed(2) + '%';
+        }
+
+        var surplusEl = box.querySelector('.type-surplus');
+        surplusEl.textContent = 'Surplus: ' + t.surplus;
+        if (Number(t.surplus) > 0) {
+            surplusEl.className += ' summary-surplus-warning';
+        }
+
+        fragment.appendChild(box);
+    }
+
+    el.summaryTypesContainer.appendChild(fragment);
+}
+
+/* =========================================================================
+   RÉSUMÉ — FIFO
+   ========================================================================= */
+
 function renderSummaryFifo() {
-    var usedByDon = getUsedDonQuantities();
+    var usedByDon     = getUsedDonQuantities();
     var totalQuantity = 0;
     var distinctDonSet = {};
 
@@ -388,213 +346,94 @@ function renderSummaryFifo() {
 
     var distinctDon = 0;
     for (var key in distinctDonSet) {
-        if (Object.prototype.hasOwnProperty.call(distinctDonSet, key)) {
-            distinctDon += 1;
-        }
+        if (Object.prototype.hasOwnProperty.call(distinctDonSet, key)) { distinctDon++; }
     }
 
-    elements.summaryBlock.textContent = '';
+    el.summaryNbDistributions.textContent = state.draftRows.length;
+    el.summaryNbDons.textContent          = distinctDon;
+    el.summaryQteTotale.textContent       = totalQuantity.toFixed(2);
 
-    var pNb = document.createElement('p');
-    pNb.textContent = 'Nombre de distributions : ';
-    var strongNb = document.createElement('strong');
-    strongNb.textContent = state.draftRows.length;
-    pNb.appendChild(strongNb);
+    el.summaryStatDons.style.display       = '';
+    el.summaryStatSatisfaits.style.display = 'none';
 
-    var pDons = document.createElement('p');
-    pDons.textContent = 'Dons utilisés : ';
-    var strongDons = document.createElement('strong');
-    strongDons.textContent = distinctDon;
-    pDons.appendChild(strongDons);
+    el.summaryDonsContainer.textContent = '';
+    var dons     = state.summary && state.summary.dons ? state.summary.dons : [];
+    var fragment = document.createDocumentFragment();
 
-    var pQte = document.createElement('p');
-    pQte.textContent = 'Quantité totale distribuée : ';
-    var strongQte = document.createElement('strong');
-    strongQte.textContent = totalQuantity.toFixed(2);
-    pQte.appendChild(strongQte);
-
-    elements.summaryBlock.appendChild(pNb);
-    elements.summaryBlock.appendChild(pDons);
-    elements.summaryBlock.appendChild(pQte);
-
-    var donRowsContainer = document.createElement('div');
-    donRowsContainer.style.marginTop = '0.8rem';
-
-    var dons = state.summary && state.summary.dons ? state.summary.dons : [];
     for (var j = 0; j < dons.length; j++) {
-        var don = dons[j];
-        var draftUsed = Number(usedByDon[don.id_don] || 0);
+        var don        = dons[j];
+        var draftUsed  = Number(usedByDon[don.id_don] || 0);
         var alreadyUsed = Number(don.quantite_deja_utilisee || 0);
-        var total = Number(don.quantite_totale || 0);
-        var used = alreadyUsed + draftUsed;
-        var remain = total - used;
-        if (remain < 0) remain = 0;
-        var pct = total > 0 ? ((used / total) * 100).toFixed(2) : '0.00';
+        var total       = Number(don.quantite_totale || 0);
+        var used        = alreadyUsed + draftUsed;
+        var remain      = Math.max(total - used, 0);
+        var pct         = total > 0 ? ((used / total) * 100).toFixed(2) : '0.00';
 
-        var div = document.createElement('div');
-        div.style.border = '1px solid #dfe6e9';
-        div.style.borderRadius = '8px';
-        div.style.padding = '0.75rem';
-        div.style.marginBottom = '0.6rem';
-
-        var title = document.createElement('strong');
-        title.textContent = 'Don #' + don.id_don + ' (' + don.type_besoin + ')';
-
-        var alreadyLine = document.createElement('div');
-        alreadyLine.textContent = 'Déjà utilisé: ' + alreadyUsed.toFixed(2);
-
-        var distribLine = document.createElement('div');
-        distribLine.textContent = 'Ajout simulation: ' + draftUsed.toFixed(2) + ' (' + pct + '% cumulé)';
-
-        var restantLine = document.createElement('div');
-        restantLine.textContent = 'Restant: ' + remain.toFixed(2);
-
-        div.appendChild(title);
-        div.appendChild(alreadyLine);
-        div.appendChild(distribLine);
-        div.appendChild(restantLine);
-        donRowsContainer.appendChild(div);
+        var box = cloneTemplate(el.tplSummaryDon);
+        box.querySelector('.don-title').textContent        = 'Don #' + don.id_don + ' (' + don.type_besoin + ')';
+        box.querySelector('.don-already-used').textContent = 'Déjà utilisé: ' + alreadyUsed.toFixed(2);
+        box.querySelector('.don-draft-used').textContent   = 'Ajout simulation: ' + draftUsed.toFixed(2) + ' (' + pct + '% cumulé)';
+        box.querySelector('.don-restant').textContent      = 'Restant: ' + remain.toFixed(2);
+        fragment.appendChild(box);
     }
 
-    elements.summaryBlock.appendChild(donRowsContainer);
+    el.summaryDonsContainer.appendChild(fragment);
+    el.summaryTypesContainer.textContent = '';
 }
 
-function renderSummaryProportionnel() {
-    elements.summaryBlock.textContent = '';
+/* =========================================================================
+   RÉSUMÉ — PROPORTIONNEL
+   ========================================================================= */
 
+function renderSummaryProportionnel() {
     var totalQty = 0;
     for (var i = 0; i < state.draftRows.length; i++) {
         totalQty += Number(state.draftRows[i].quantite_proposee || 0);
     }
 
-    var pNb = document.createElement('p');
-    pNb.textContent = 'Nombre de propositions : ';
-    var strongNb = document.createElement('strong');
-    strongNb.textContent = state.draftRows.length;
-    pNb.appendChild(strongNb);
+    el.summaryNbDistributions.textContent  = state.draftRows.length;
+    el.summaryQteTotale.textContent        = String(totalQty);
+    el.summaryStatDons.style.display       = 'none';
+    el.summaryStatSatisfaits.style.display = 'none';
 
-    var pQte = document.createElement('p');
-    pQte.textContent = 'Quantité totale allouée : ';
-    var strongQte = document.createElement('strong');
-    strongQte.textContent = String(totalQty);
-    pQte.appendChild(strongQte);
-
-    elements.summaryBlock.appendChild(pNb);
-    elements.summaryBlock.appendChild(pQte);
-
-    var types = state.summary && state.summary.types ? state.summary.types : [];
-    for (var j = 0; j < types.length; j++) {
-        var t = types[j];
-
-        var box = document.createElement('div');
-        box.style.border = '1px solid #dfe6e9';
-        box.style.borderRadius = '8px';
-        box.style.padding = '0.75rem';
-        box.style.marginBottom = '0.6rem';
-
-        var title = document.createElement('strong');
-        title.textContent = t.type_besoin;
-
-        var l1 = document.createElement('div');
-        l1.textContent = 'Don disponible: ' + t.don_disponible;
-
-        var l2 = document.createElement('div');
-        l2.textContent = 'Besoin total: ' + t.besoin_total;
-
-        var l3 = document.createElement('div');
-        l3.textContent = 'Ratio: ' + Number(t.ratio_pct).toFixed(2) + '%';
-
-        var l4 = document.createElement('div');
-        l4.textContent = 'Surplus: ' + t.surplus;
-        if (Number(t.surplus) > 0) {
-            l4.style.color = '#d35400';
-            l4.style.fontWeight = '600';
-        }
-
-        box.appendChild(title);
-        box.appendChild(l1);
-        box.appendChild(l2);
-        box.appendChild(l3);
-        box.appendChild(l4);
-
-        elements.summaryBlock.appendChild(box);
-    }
+    el.summaryDonsContainer.textContent = '';
+    renderSummaryTypesContainer(true);
 }
+
+/* =========================================================================
+   RÉSUMÉ — PRIORITÉ PETITS
+   ========================================================================= */
 
 function renderSummaryPrioritePetits() {
-    elements.summaryBlock.textContent = '';
-
-    var totalQty = 0;
+    var totalQty    = 0;
     var nbSatisfaits = 0;
-    var nbPartiels = 0;
-    var nbZero = 0;
+    var nbPartiels   = 0;
+    var nbZero       = 0;
 
     for (var i = 0; i < state.draftRows.length; i++) {
-        var row = state.draftRows[i];
-        totalQty += Number(row.quantite_proposee || 0);
+        var row    = state.draftRows[i];
         var status = getPrioriteStatus(row);
-        if (status.key === 'satisfait') {
-            nbSatisfaits += 1;
-        } else if (status.key === 'partiel') {
-            nbPartiels += 1;
-        } else {
-            nbZero += 1;
-        }
+        totalQty  += Number(row.quantite_proposee || 0);
+        if (status.key === 'satisfait')   { nbSatisfaits++; }
+        else if (status.key === 'partiel') { nbPartiels++; }
+        else                               { nbZero++; }
     }
 
-    var pNb = document.createElement('p');
-    pNb.textContent = 'Nombre de propositions : ';
-    var strongNb = document.createElement('strong');
-    strongNb.textContent = state.draftRows.length;
-    pNb.appendChild(strongNb);
+    el.summaryNbDistributions.textContent  = state.draftRows.length;
+    el.summaryQteTotale.textContent        = String(totalQty);
+    el.summaryNbSatisfaits.textContent     = nbSatisfaits;
+    el.summaryNbPartiels.textContent       = nbPartiels;
+    el.summaryNbZero.textContent           = nbZero;
+    el.summaryStatDons.style.display       = 'none';
+    el.summaryStatSatisfaits.style.display = '';
 
-    var pQte = document.createElement('p');
-    pQte.textContent = 'Quantité totale allouée : ';
-    var strongQte = document.createElement('strong');
-    strongQte.textContent = String(totalQty);
-    pQte.appendChild(strongQte);
-
-    var pSat = document.createElement('p');
-    pSat.innerHTML = 'Satisfaits 100% : <strong>' + nbSatisfaits + '</strong> | Partiels : <strong>' + nbPartiels + '</strong> | Non satisfaits : <strong>' + nbZero + '</strong>';
-
-    elements.summaryBlock.appendChild(pNb);
-    elements.summaryBlock.appendChild(pQte);
-    elements.summaryBlock.appendChild(pSat);
-
-    var types = state.summary && state.summary.types ? state.summary.types : [];
-    for (var j = 0; j < types.length; j++) {
-        var t = types[j];
-
-        var box = document.createElement('div');
-        box.style.border = '1px solid #dfe6e9';
-        box.style.borderRadius = '8px';
-        box.style.padding = '0.75rem';
-        box.style.marginBottom = '0.6rem';
-
-        var title = document.createElement('strong');
-        title.textContent = t.type_besoin;
-
-        var l1 = document.createElement('div');
-        l1.textContent = 'Don disponible: ' + t.don_disponible;
-
-        var l2 = document.createElement('div');
-        l2.textContent = 'Besoin total: ' + t.besoin_total;
-
-        var l3 = document.createElement('div');
-        l3.textContent = 'Surplus: ' + t.surplus;
-        if (Number(t.surplus) > 0) {
-            l3.style.color = '#d35400';
-            l3.style.fontWeight = '600';
-        }
-
-        box.appendChild(title);
-        box.appendChild(l1);
-        box.appendChild(l2);
-        box.appendChild(l3);
-
-        elements.summaryBlock.appendChild(box);
-    }
+    el.summaryDonsContainer.textContent = '';
+    renderSummaryTypesContainer(false);
 }
+
+/* =========================================================================
+   RÉSUMÉ — DISPATCH
+   ========================================================================= */
 
 function renderSummary() {
     if (state.modeDispatch === 'proportionnel') {
@@ -606,37 +445,42 @@ function renderSummary() {
     }
 }
 
+/* =========================================================================
+   RENDU GLOBAL
+   ========================================================================= */
+
 function rerenderDraft() {
     if (state.draftRows.length === 0) {
         showNoResultsState();
         return;
     }
-
     renderTable();
     renderSummary();
     showSimulationResults();
 }
 
+/* =========================================================================
+   SIMULATION
+   ========================================================================= */
+
 function handleSimulate(mode) {
-    if (mode) {
-        state.modeDispatch = mode;
-    }
+    if (mode) { state.modeDispatch = mode; }
     setActiveModeButton(state.modeDispatch);
 
     var xhr = new XMLHttpRequest();
     xhr.open('GET', apiUrl('api/dispatch/simulate?mode_dispatch=' + encodeURIComponent(state.modeDispatch)), true);
     xhr.setRequestHeader('Accept', 'application/json');
 
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             var response = JSON.parse(xhr.responseText);
             if (response.success) {
-                var data = response.data || {};
-                state.modeDispatch = data.mode_dispatch || state.modeDispatch;
-                state.draftRows = data.distributions || [];
+                var data             = response.data || {};
+                state.modeDispatch   = data.mode_dispatch || state.modeDispatch;
+                state.draftRows      = data.distributions || [];
                 state.eligibleCitiesByType = data.eligible_cities_by_type || {};
                 state.needRemainings = data.need_remainings || {};
-                state.summary = data.summary || null;
+                state.summary        = data.summary || null;
 
                 if (state.draftRows.length === 0) {
                     showNoResultsState();
@@ -648,31 +492,27 @@ function handleSimulate(mode) {
                 showNoResultsState();
             }
         } else {
-            var errorResponse = null;
+            var errMsg = 'Erreur HTTP ' + xhr.status;
             try {
-                errorResponse = JSON.parse(xhr.responseText);
-            } catch (e) {
-                errorResponse = null;
-            }
-            var message = errorResponse && errorResponse.message
-                ? errorResponse.message
-                : ('Erreur HTTP ' + xhr.status);
-            showToast('Erreur', message, true);
+                var errResp = JSON.parse(xhr.responseText);
+                if (errResp && errResp.message) { errMsg = errResp.message; }
+            } catch (e) { /* ignore */ }
+            showToast('Erreur', errMsg, true);
             showNoResultsState();
         }
     };
 
-    xhr.onerror = function() {
-        showToast('Erreur', 'Erreur réseau', true);
-        showNoResultsState();
-    };
-
+    xhr.onerror = function () { showToast('Erreur', 'Erreur réseau', true); showNoResultsState(); };
     xhr.send();
 }
 
+/* =========================================================================
+   INTERACTIONS UTILISATEUR
+   ========================================================================= */
+
 function handleQuantityChange(index, value) {
-    var row = state.draftRows[index];
-    if (!row) return;
+    var row    = state.draftRows[index];
+    if (!row)  { return; }
 
     var parsed = Number(value);
     if (isNaN(parsed) || parsed < 0) {
@@ -687,13 +527,11 @@ function handleQuantityChange(index, value) {
             rerenderDraft();
             return;
         }
-
         if (parsed > Number(row.besoin_restant)) {
             showToast('Validation', 'La quantité dépasse le besoin restant.', true);
             rerenderDraft();
             return;
         }
-
         row.quantite_proposee = parsed;
         rerenderDraft();
         return;
@@ -705,11 +543,11 @@ function handleQuantityChange(index, value) {
         return;
     }
 
-    var previous = Number(row.quantite_proposee);
+    var previous      = Number(row.quantite_proposee);
     row.quantite_proposee = parsed;
 
     var usedByDon = getUsedDonQuantities();
-    var limit = getDonLimitById(row.id_don);
+    var limit     = getDonLimitById(row.id_don);
     if ((usedByDon[row.id_don] || 0) > limit + 0.00001) {
         row.quantite_proposee = previous;
         showToast('Validation', 'La somme distribuée dépasse la quantité disponible du don.', true);
@@ -722,25 +560,19 @@ function handleQuantityChange(index, value) {
 
 function handleCityChange(index, idVille) {
     var row = state.draftRows[index];
-    if (!row) return;
+    if (!row) { return; }
     row.id_ville = Number(idVille);
     rerenderDraft();
 }
 
 function handleRemove(index) {
-    var newRows = [];
-    for (var i = 0; i < state.draftRows.length; i++) {
-        if (i !== index) {
-            newRows.push(state.draftRows[i]);
-        }
-    }
-    state.draftRows = newRows;
+    state.draftRows = state.draftRows.filter(function (_, i) { return i !== index; });
     rerenderDraft();
 }
 
 function handleReset(index) {
     var row = state.draftRows[index];
-    if (!row) return;
+    if (!row) { return; }
     row.quantite_proposee = Number(row.quantite_initiale || 0);
     rerenderDraft();
 }
@@ -756,50 +588,39 @@ function handleValidate() {
     xhr.setRequestHeader('Accept', 'application/json');
     xhr.setRequestHeader('Content-Type', 'application/json');
 
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             var response = JSON.parse(xhr.responseText);
             if (response.success) {
                 showToast('Succès', response.message || 'Dispatch validé avec succès.', false);
                 state.draftRows = [];
-                state.summary = null;
+                state.summary   = null;
                 showEmptyState();
             } else {
                 showToast('Erreur', response.message || 'Erreur API', true);
             }
         } else {
-            var errorResponse = null;
+            var errMsg = 'Erreur HTTP ' + xhr.status;
             try {
-                errorResponse = JSON.parse(xhr.responseText);
-            } catch (e) {
-                errorResponse = null;
-            }
-            var message = errorResponse && errorResponse.message
-                ? errorResponse.message
-                : ('Erreur HTTP ' + xhr.status);
-            showToast('Erreur', message, true);
+                var errResp = JSON.parse(xhr.responseText);
+                if (errResp && errResp.message) { errMsg = errResp.message; }
+            } catch (e) { /* ignore */ }
+            showToast('Erreur', errMsg, true);
         }
     };
 
-    xhr.onerror = function() {
-        showToast('Erreur', 'Erreur réseau', true);
-    };
-
-    xhr.send(JSON.stringify({
-        mode_dispatch: state.modeDispatch,
-        distributions: state.draftRows
-    }));
+    xhr.onerror = function () { showToast('Erreur', 'Erreur réseau', true); };
+    xhr.send(JSON.stringify({ mode_dispatch: state.modeDispatch, distributions: state.draftRows }));
 }
 
 function handleCancel() {
     state.draftRows = [];
-    state.summary = null;
+    state.summary   = null;
     showEmptyState();
 }
 
 function handleResetData() {
-    var confirmed = window.confirm('Réinitialiser les besoins et les dons à l\'état initial ? Cette action efface aussi les dispatchs et achats enregistrés.');
-    if (!confirmed) {
+    if (!window.confirm('Réinitialiser les besoins et les dons à l\'état initial ? Cette action efface aussi les dispatchs et achats enregistrés.')) {
         return;
     }
 
@@ -807,14 +628,14 @@ function handleResetData() {
     xhr.open('POST', apiUrl('api/dispatch/reset-data'), true);
     xhr.setRequestHeader('Accept', 'application/json');
 
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             var response = JSON.parse(xhr.responseText);
             if (response.success) {
-                state.draftRows = [];
+                state.draftRows            = [];
                 state.eligibleCitiesByType = {};
-                state.needRemainings = {};
-                state.summary = null;
+                state.needRemainings       = {};
+                state.summary              = null;
                 showEmptyState();
                 showToast('Succès', response.message || 'Réinitialisation terminée.', false);
             } else {
@@ -825,77 +646,59 @@ function handleResetData() {
         }
     };
 
-    xhr.onerror = function() {
-        showToast('Erreur', 'Erreur réseau', true);
-    };
-
+    xhr.onerror = function () { showToast('Erreur', 'Erreur réseau', true); };
     xhr.send();
 }
 
+/* =========================================================================
+   DÉLÉGATION D'ÉVÉNEMENTS TABLE
+   ========================================================================= */
+
 function onTableInput(event) {
     var target = event.target;
-    var action = target.getAttribute('data-action');
-    var index = Number(target.getAttribute('data-index'));
-    if (action === 'quantity') {
-        handleQuantityChange(index, target.value);
+    if (target.getAttribute('data-action') === 'quantity') {
+        handleQuantityChange(Number(target.getAttribute('data-index')), target.value);
     }
 }
 
 function onTableChange(event) {
     var target = event.target;
-    var action = target.getAttribute('data-action');
-    var index = Number(target.getAttribute('data-index'));
-    if (action === 'city') {
-        handleCityChange(index, target.value);
+    if (target.getAttribute('data-action') === 'city') {
+        handleCityChange(Number(target.getAttribute('data-index')), target.value);
     }
 }
 
 function onTableClick(event) {
     var target = event.target;
     var action = target.getAttribute('data-action');
-    var index = Number(target.getAttribute('data-index'));
-
-    if (action === 'remove') {
-        handleRemove(index);
-        return;
-    }
-
-    if (action === 'reset') {
-        handleReset(index);
-    }
+    var index  = Number(target.getAttribute('data-index'));
+    if (action === 'remove') { handleRemove(index); }
+    if (action === 'reset')  { handleReset(index); }
 }
 
 function onModeButtonClick(event) {
-    var btn = event.currentTarget;
-    var mode = btn.getAttribute('data-mode-dispatch');
-    if (!mode) {
-        return;
-    }
-    handleSimulate(mode);
+    var mode = event.currentTarget.getAttribute('data-mode-dispatch');
+    if (mode) { handleSimulate(mode); }
 }
+
+/* =========================================================================
+   INITIALISATION
+   ========================================================================= */
 
 function init() {
     showEmptyState();
     setActiveModeButton(state.modeDispatch);
 
-    if (elements.modeButtons && elements.modeButtons.length > 0) {
-        for (var i = 0; i < elements.modeButtons.length; i++) {
-            elements.modeButtons[i].addEventListener('click', onModeButtonClick);
-        }
+    for (var i = 0; i < el.modeButtons.length; i++) {
+        el.modeButtons[i].addEventListener('click', onModeButtonClick);
     }
-    if (elements.validateBtn) {
-        elements.validateBtn.addEventListener('click', handleValidate);
-    }
-    if (elements.resetDataBtn) {
-        elements.resetDataBtn.addEventListener('click', handleResetData);
-    }
-    if (elements.cancelBtn) {
-        elements.cancelBtn.addEventListener('click', handleCancel);
-    }
-    if (elements.resultsTableBody) {
-        elements.resultsTableBody.addEventListener('input', onTableInput);
-        elements.resultsTableBody.addEventListener('change', onTableChange);
-        elements.resultsTableBody.addEventListener('click', onTableClick);
+    if (el.validateBtn)       { el.validateBtn.addEventListener('click', handleValidate); }
+    if (el.resetDataBtn)      { el.resetDataBtn.addEventListener('click', handleResetData); }
+    if (el.cancelBtn)         { el.cancelBtn.addEventListener('click', handleCancel); }
+    if (el.resultsTableBody) {
+        el.resultsTableBody.addEventListener('input',  onTableInput);
+        el.resultsTableBody.addEventListener('change', onTableChange);
+        el.resultsTableBody.addEventListener('click',  onTableClick);
     }
 }
 

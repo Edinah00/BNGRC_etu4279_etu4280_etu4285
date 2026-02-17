@@ -1,551 +1,364 @@
-Objectifs
-    Conception de base de données, Requêtes SQL , Applications web
-
-Partie 1 :
-
-Preparation MPIARO
-    OK Repository sur Git
-    OK config.php (connexion DB)
-    OK BASE_URL
-    OK routes.php
-            welcome
-    OK style.css
-    OK modele pour navbar et footer principal
-    PUSH 
-Partie 1:
-
-Page 1: BENEFICES (LiBASE_URLste par periode) 
-    PULL
-        BASE MPIARO
-            OK CREATE TABLE 
-                livreurs_liv
-                vehicules_liv
-                zones_livraison_liv
-                entrepot_liv
-                colis_liv
-
-            OK CREATE TABLE livraisons_liv
-
-            OK CREATE Vue SQL vue_benefices_livraisons_liv
-    PUSH 
-    Model EDINAH
-    PULL
-        OK - Creer Benefit.php
-        OK - (Flight::get('db'))
-        OK - getByPeriod(day | month | year)
-        OK - getDetails() (Mampiasa ilay view)
-        OK - getBeneficesByVehicule()
-    PUSH 
-    Controller EDINAH
-    PULL
-        OK - Creer BenefitController.php
-        OK - Methode index() : affichage global
-        OK - Methode byPeriod($type)
-        OK - Gestion des filtres jour / mois / annee
-    PUSH 
-    Routes MPIAROBASE_URL
-    PULL
-        OK - benefits  
-        OK - benefits/period/@type
-    PUSH 
-    View MPIARO
-    PULL
-        OK - index.php
-            OK Tab des benefices, 
-            OK Boutons filtres periode,
-            OK Affichage benefices
-            OK Calcul marge en pourcentage
-
-        OK - CSS
-    PUSH 
-Page 2 : Liste des livraisons 
-    OK BASE EDINAH
-        Data 
-    OK Model EDINAH
-    PULL
-        OK - getAll() Misy JOIN
-    PUSH 
-    OK Controller MPIARO
-    PULL
-        OK - Creer DeliveryController.php
-        OK - Methode index() : affichage global
-    PUSH 
-    OK Routes EDINAH
-    PULL
-        OK - /deliveries 
-    PUSH 
-    OK View MPIARO
-    PULL
-        OK - index.php
-                tab des livraisons avec bouton VOIR pour chaque detail de livraison
-        OK - CSS
-    PUSH 
-
-Page 3 : Detail de livraison
-    BASE MPIARO
-        Data 
-    OK Model EDINAH
-    PULL
-        OK - getById($id)
-        OK - updateStatus($id, $status) (@ ilay modif status livraison)
-        OK - getLivreurs()
-        OK - getVehicules()
-        OK - getZones()
-    PUSH 
-    Controller MPIARO
-    PULL
-        OK - Ajout dans DeliveryController.php:
-            OK show($id)
-    Routes MPIARO
-    PULL
-        OK - /deliveries/@id:[0-9]+    
-        OK - /deliveries/@id:[0-9]+/update-status
-    PUSH 
-    View EDINAH
-    PULL
-        OK - show.php
-            detail des livraisons plus options pour modifier status
-        OK - CSS
-    PUSH 
-Page 4 : Page de création de livraison
-    BASE
-        
-    Model EDINAH
-    PULL
-        OK - create($data) (misy transaction) 
-    PUSH 
-    Controller MPIARO
-    PULL
-        OK - create() : formulaire
-        OK - store() : insertion
-    PUSH 
-    Routes MPIARO
-    PULL
-        OK - /deliveries/create
-        OK - /deliveries/store
-    PUSH 
-    View EDINAH
-    PULL
-        OK - create.php
-    PUSH 
+VERSION 1
+
+--------------------------------------------------------------
+I- DATABASE                                    Mpiaro   10 min
+--------------------------------------------------------------
+
+  [OK] TABLES :                                          Mpiaro   10 min
+
+      [OK] 1- region ( id_region, nom )                  Mpiaro    2 min
+      [OK] 2- ville ( id_ville, nom, id_region )         Mpiaro    2 min
+      [OK] 3- type_besoin ( id_type, libelle,            Mpiaro    2 min
+                  categorie ENUM('nature','materiaux',
+                  'argent') )
+      [OK] 4- besoin ( id_besoin, id_ville, id_type,     Mpiaro    2 min
+                  nom_produit, quantite,
+                  quantite_satisfaite, prix_unitaire,
+                  date_saisie )
+      [OK] 5- don ( id_don, id_type, quantite,           Mpiaro    2 min
+                  quantite_utilisee, date_don )
+      [OK] 6- distribution ( id_dispatch, id_don,        Mpiaro    2 min
+                  id_ville, quantite_attribuee,
+                  date_dispatch )
+      [OK] 7- achat ( id_achat, id_besoin, id_ville,     Mpiaro    2 min
+                  id_type, nom_produit, quantite,
+                  prix_unitaire, montant_ht, taux_frais,
+                  montant_frais, montant_ttc, date_achat )
+      [OK] 8- configuration ( id_config, cle UNIQUE,     Mpiaro    2 min
+                  valeur, description, date_maj )
+                  → INSERT taux_frais_achat = '10.00'
+
+
+--------------------------------------------------------------
+II- CONCEPTION / SCRIPT BASE          Mpiaro/Edinah   10 min
+--------------------------------------------------------------
+
+  [OK] Conception generale (MVC, routes, DB conn)  Mpiaro/Edinah   5 min
+  [OK] Script base SQL (inserts, vues, triggers)         Mpiaro    5 min
+
+      [OK] Vue : besoins_achetables                      Mpiaro    2 min
+             → besoins nature/materiaux restants > 0
+
+      [OK] Trigger : before_achat_insert                 Mpiaro    2 min
+             → Bloquer achat si type = 'argent'
+             → Bloquer si don restant > 0 pour ce type
+             → Bloquer si argent insuffisant
+
+      [OK] Fonction : don_existe_pour_type(p_id_type)    Mpiaro    1 min
+             → Retourne BOOLEAN
+
+
+--------------------------------------------------------------
+III- TEMPLATE (FRONT)                         Jeannie   60 min
+--------------------------------------------------------------
+
+  [OK] header.php                                       Jeannie   10 min
+  [OK] footer.php                                       Jeannie    5 min
+  [OK] navigation.php                                   Jeannie   10 min
+  [OK] sidebar.php                                      Jeannie   10 min
+  [OK] CSS global / design responsive                   Jeannie   25 min
+
+
+--------------------------------------------------------------
+IV- DASHBOARD                                  Edinah   30 min
+--------------------------------------------------------------
+
+  [OK] Page dashboard.php                               Edinah    10 min
+      [OK] Liste des villes avec besoins vs dons        Edinah     5 min
+      [OK] Indicateurs : total besoins / dons /         Edinah     5 min
+           argent disponible
+      [OK] Tableau recapitulatif par ville              Edinah     5 min
+      [OK] Bouton Actualiser (Ajax)                     Edinah     5 min
+
+  [OK] DashboardController.php                          Edinah     5 min
+      [OK] GET /          → index()                     Edinah     3 min
+      [OK] GET /dashboard/data → getData() JSON         Edinah     2 min
+
+  [OK] DashboardModel.php                               Edinah    15 min
+      [OK] getStatsParVille($db)                        Edinah     5 min
+      [OK] getTotalBesoins($db)                         Edinah     3 min
+      [OK] getTotalDons($db)                            Edinah     3 min
+      [OK] getArgentDisponible($db)                     Edinah     4 min
+
+
+--------------------------------------------------------------
+V- RECAPITULATION                             Jeannie   60 min
+--------------------------------------------------------------
+
+  [OK] Page rapport/index.php                          Jeannie   20 min
+      [OK] Besoins totaux et satisfaits en montant     Jeannie    5 min
+      [OK] Montant des besoins restants                Jeannie    5 min
+      [OK] Tableau recap par ville et par type         Jeannie    5 min
+      [OK] Bouton Actualiser (Ajax)                    Jeannie    5 min
+
+  [OK] RapportController.php                           Jeannie   10 min
+      [OK] GET /rapport        → index()               Jeannie    5 min
+      [OK] GET /rapport/data   → getData() JSON        Jeannie    5 min
+
+  [OK] RapportModel.php                                Jeannie   20 min
+      [OK] getBesoinsTotal($db)                        Jeannie    5 min
+      [OK] getBesoinsSatisfaits($db)                   Jeannie    5 min
+      [OK] getBesoinsRestants($db)                     Jeannie    5 min
+      [OK] getRecapParVilleEtType($db)                 Jeannie    5 min
+
+  [OK] rapport.js - Bouton Actualiser Ajax             Jeannie   10 min
+
+
+--------------------------------------------------------------
+VI- DISPATCH PAR DATE                          Mpiaro  120 min
+--------------------------------------------------------------
+
+  [OK] Page dispatch/index.php                          Mpiaro   30 min
+      [OK] Tableau previsionnel des attributions        Mpiaro   10 min
+      [OK] Bouton "Simuler" (Ajax, sans valider)        Mpiaro   10 min
+      [OK] Bouton "Valider" (dispatch reel)             Mpiaro   10 min
+
+  [OK] DispatchController.php                           Mpiaro   20 min
+      [OK] GET  /dispatch          → index()            Mpiaro    5 min
+      [OK] POST /dispatch/simuler  → simuler()          Mpiaro    8 min
+      [OK] POST /dispatch/valider  → valider()          Mpiaro    7 min
+
+  [OK] DispatchModel.php                                Mpiaro   50 min
+      [OK] getAllDistributions($db)                      Mpiaro    5 min
+      [OK] getDistributionsByVille($id_ville, $db)      Mpiaro    5 min
+      [OK] getDistributionsByDon($id_don, $db)          Mpiaro    5 min
+      [OK] simulerDispatch($db)                         Mpiaro   20 min
+             → Parcourir dons par date_don ASC
+             → Attribuer aux besoins date_saisie ASC
+             → Stopper quand don epuise
+      [OK] validerDispatch($params, $db)                Mpiaro   10 min
+             → INSERT distributions
+             → MAJ quantite_utilisee don
+      [OK] insertDistribution($params, $db)             Mpiaro    5 min
+
+  [OK] dispatch.js                                      Mpiaro   20 min
+      [OK] Bouton Simuler → POST /dispatch/simuler      Mpiaro   10 min
+      [OK] Bouton Valider → POST /dispatch/valider      Mpiaro   10 min
+           → Confirmation avant envoi
+           → Message succes/erreur
+
+
+--------------------------------------------------------------
+VII- DONS + BESOINS (CRUD)                     Edinah   60 min
+--------------------------------------------------------------
+
+  [OK] MODELES                                          Edinah   25 min
+
+    [OK] BesoinsModel.php                               Edinah   15 min
+        [OK] getAllBesoins($db)                         Edinah    2 min
+        [OK] getBesoinById($id, $db)                   Edinah    2 min
+        [OK] getBesoinsByVille($id_ville, $db)         Edinah    2 min
+        [OK] getBesoinsByType($id_type, $db)           Edinah    2 min
+        [OK] insertBesoin($params, $db)                Edinah    2 min
+        [OK] updateBesoin($id, $params, $db)           Edinah    2 min
+        [OK] deleteBesoin($id, $db)                    Edinah    1 min
+        [OK] getBesoinsRestants($db)                   Edinah    2 min
+
+    [OK] DonsModel.php                                  Edinah   10 min
+        [OK] getAllDons($db)                            Edinah    2 min
+        [OK] getDonById($id, $db)                      Edinah    1 min
+        [OK] getDonsByType($id_type, $db)              Edinah    2 min
+        [OK] getDonsRestants($db)                      Edinah    2 min
+        [OK] insertDon($params, $db)                   Edinah    1 min
+        [OK] updateDon($id, $params, $db)              Edinah    1 min
+        [OK] deleteDon($id, $db)                       Edinah    1 min
+
+  [OK] CONTROLEURS                                      Edinah   10 min
+
+    [OK] BesoinsController.php                          Edinah    5 min
+        [OK] GET    /besoins                → index()  Edinah    1 min
+        [OK] GET    /besoins/:id            → show()   Edinah    1 min
+        [OK] GET    /besoins/ville/:id      → byVille  Edinah    1 min
+        [OK] POST   /besoins                → store()  Edinah    1 min
+        [OK] PUT    /besoins/:id            → update() Edinah    1 min
+        [OK] DELETE /besoins/:id            → delete() Edinah    0 min
+
+    [OK] DonsController.php                             Edinah    5 min
+        [OK] GET    /dons                   → index()  Edinah    1 min
+        [OK] GET    /dons/:id               → show()   Edinah    1 min
+        [OK] POST   /dons                   → store()  Edinah    1 min
+        [OK] PUT    /dons/:id               → update() Edinah    1 min
+        [OK] DELETE /dons/:id               → delete() Edinah    1 min
+
+  [OK] VUES                                             Edinah   25 min
+
+    [OK] besoins/index.php   (filtre ville/type)        Edinah    8 min
+    [OK] besoins/create.php  (formulaire saisie)        Edinah    5 min
+    [OK] besoins/edit.php                               Edinah    4 min
+    [OK] besoins/show.php    (detail + avancement)      Edinah    3 min
+    [OK] dons/index.php      (filtre par type)          Edinah    3 min
+    [OK] dons/create.php                                Edinah    1 min
+    [OK] dons/edit.php                                  Edinah    1 min
+    [OK] besoins.js          (filtres dynamiques Ajax)  Edinah    5 min
+    [OK] dons.js                                        Edinah    3 min
+    [OK] regions.js & villes.js                         Edinah    2 min
+         → Chargement villes selon region selectionnee
+
+
+--------------------------------------------------------------
+VIII- VILLES + REGIONS (CRUD)                 Jeannie   60 min
+--------------------------------------------------------------
+
+  [OK] MODELES                                         Jeannie   20 min
+
+    [OK] RegionsModel.php                              Jeannie   10 min
+        [OK] getAllRegions($db)                        Jeannie    2 min
+        [OK] getRegionById($id, $db)                  Jeannie    2 min
+        [OK] insertRegion($params, $db)               Jeannie    2 min
+        [OK] updateRegion($id, $params, $db)          Jeannie    2 min
+        [OK] deleteRegion($id, $db)                   Jeannie    2 min
+
+    [OK] VillesModel.php                              Jeannie   10 min
+        [OK] getAllVilles($db)                         Jeannie    2 min
+        [OK] getVilleById($id, $db)                   Jeannie    2 min
+        [OK] getVillesByRegion($id_region, $db)       Jeannie    2 min
+        [OK] insertVille($params, $db)                Jeannie    2 min
+        [OK] updateVille($id, $params, $db)           Jeannie    1 min
+        [OK] deleteVille($id, $db)                    Jeannie    1 min
+
+  [OK] CONTROLEURS                                     Jeannie   10 min
+
+    [OK] RegionsController.php                         Jeannie    5 min
+        [OK] GET    /regions        → index()          Jeannie    1 min
+        [OK] GET    /regions/:id    → show()           Jeannie    1 min
+        [OK] POST   /regions        → store()          Jeannie    1 min
+        [OK] PUT    /regions/:id    → update()         Jeannie    1 min
+        [OK] DELETE /regions/:id    → delete()         Jeannie    1 min
+
+    [OK] VillesController.php                          Jeannie    5 min
+        [OK] GET    /villes         → index()          Jeannie    1 min
+        [OK] GET    /villes/:id     → show()           Jeannie    1 min
+        [OK] POST   /villes         → store()          Jeannie    1 min
+        [OK] PUT    /villes/:id     → update()         Jeannie    1 min
+        [OK] DELETE /villes/:id     → delete()         Jeannie    1 min
+
+  [OK] VUES                                            Jeannie   30 min
+
+    [OK] regions/index.php                             Jeannie    5 min
+    [OK] regions/create.php                            Jeannie    3 min
+    [OK] regions/edit.php                              Jeannie    3 min
+    [OK] villes/index.php  (avec region associee)      Jeannie    7 min
+    [OK] villes/create.php (select region)             Jeannie    5 min
+    [OK] villes/edit.php                               Jeannie    4 min
+    [OK] villes.js         (chargement dynamique)      Jeannie    3 min
+
+
+--------------------------------------------------------------
+VERSION 2
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+IX- ACHAT                                      Mpiaro   60 min
+--------------------------------------------------------------
+
+  [OK] AchatsModel.php                                  Mpiaro   20 min
+      [OK] getAllAchats($db)                             Mpiaro    2 min
+      [OK] getAchatById($id, $db)                       Mpiaro    2 min
+      [OK] getAchatsByVille($id_ville, $db)             Mpiaro    3 min
+      [OK] getAchatsByType($id_type, $db)               Mpiaro    3 min
+      [OK] insertAchat($params, $db)                    Mpiaro    5 min
+      [OK] deleteAchat($id, $db)                        Mpiaro    2 min
+      [OK] calculerMontantTTC($montant_ht, $taux)       Mpiaro    3 min
+           → montant_ht * (1 + taux/100)
+
+  [OK] ConfigurationModel.php                           Mpiaro    5 min
+      [OK] getConfig($cle, $db)                         Mpiaro    2 min
+      [OK] updateConfig($cle, $valeur, $db)             Mpiaro    2 min
+      [OK] getTauxFrais($db)                            Mpiaro    1 min
+
+  [OK] AchatsController.php                             Mpiaro   10 min
+      [OK] GET    /achats           → index()           Mpiaro    2 min
+      [OK] GET    /achats/ville/:id → getByVille()      Mpiaro    2 min
+      [OK] POST   /achats           → store()           Mpiaro    4 min
+      [OK] DELETE /achats/:id       → delete()          Mpiaro    2 min
+
+  [OK] VUES ACHAT                                       Mpiaro   20 min
+      [OK] achats/index.php (filtre par ville)          Mpiaro    8 min
+      [OK] achats/create.php                            Mpiaro   12 min
+           → Liste besoins achetables (vue SQL)
+           → Calcul auto TTC selon taux de frais
+           → Erreur si don dispo pour ce type
+
+  [OK] achats.js                                        Mpiaro    5 min
+      [OK] Calcul auto TTC (quantite x prix x taux)     Mpiaro    3 min
+      [OK] Verification argent dispo avant soumission   Mpiaro    2 min
+
+  [OK] config/index.php (modifier taux frais)           Mpiaro    5 min
+
+
+--------------------------------------------------------------
+VERSION 3
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+X- DISPATCH PAR DEMANDE                       Jeannie  120 min
+--------------------------------------------------------------
+
+  [OK] Page dispatch_demande/index.php                 Jeannie   30 min
+      [OK] Formulaire selection ville + type           Jeannie   10 min
+      [OK] Bouton Simuler (Ajax)                       Jeannie   10 min
+      [OK] Bouton Valider                              Jeannie   10 min
+
+  [OK] DispatchDemandeController.php                   Jeannie   20 min
+      [OK] GET  /dispatch/demande          → index()   Jeannie    5 min
+      [OK] POST /dispatch/demande/simuler  → simuler() Jeannie    8 min
+      [OK] POST /dispatch/demande/valider  → valider() Jeannie    7 min
+
+  [OK] DispatchDemandeModel.php                        Jeannie   50 min
+      [OK] simulerParDemande($ville, $type, $db)       Jeannie   25 min
+           → Attribuer selon demande specifique
+      [OK] validerParDemande($params, $db)             Jeannie   15 min
+      [OK] getHistoriqueParDemande($db)                Jeannie   10 min
+
+  [OK] dispatch_demande.js                             Jeannie   20 min
+      [OK] Ajax simuler                                Jeannie   10 min
+      [OK] Ajax valider + confirmation                 Jeannie   10 min
+
+
+--------------------------------------------------------------
+XI- DISPATCH PAR PROPORTIONNALITE             Mpiaro   120 min
+--------------------------------------------------------------
+
+  [OK] Page dispatch_prop/index.php                     Mpiaro   30 min
+      [OK] Tableau proportionnel par ville              Mpiaro   10 min
+      [OK] Bouton Simuler (Ajax)                        Mpiaro   10 min
+      [OK] Bouton Valider                               Mpiaro   10 min
+
+  [OK] DispatchPropController.php                       Mpiaro   20 min
+      [OK] GET  /dispatch/prop          → index()       Mpiaro    5 min
+      [OK] POST /dispatch/prop/simuler  → simuler()     Mpiaro    8 min
+      [OK] POST /dispatch/prop/valider  → valider()     Mpiaro    7 min
+
+  [OK] DispatchPropModel.php                            Mpiaro   50 min
+      [OK] simulerParProp($db)                          Mpiaro   25 min
+           → Calcul proportion selon besoins / ville
+           → Distribution au pro-rata
+      [OK] validerParProp($params, $db)                 Mpiaro   15 min
+      [OK] getResultatsProp($db)                        Mpiaro   10 min
+
+  [OK] dispatch_prop.js                                 Mpiaro   20 min
+      [OK] Ajax simuler                                 Mpiaro   10 min
+      [OK] Ajax valider + confirmation                  Mpiaro   10 min
+
+
+--------------------------------------------------------------
+XII- BOUTON RESTAURER                          Edinah   60 min
+--------------------------------------------------------------
+
+  [OK] Logique reset/restauration                       Edinah   20 min
+      [OK] RestaurationModel.php                        Edinah   15 min
+           → resetBesoins($db)
+           → resetDons($db)
+           → resetDistributions($db)
+           → resetAchats($db)
+      [OK] RestaurationController.php                   Edinah    5 min
+           → POST /restaurer → restaurer()
+
+  [OK] Vue restauration                                 Edinah   10 min
+      [OK] Bouton Restaurer avec confirmation           Edinah   10 min
+
+  [OK] restaurer.js                                     Edinah   30 min
+      [OK] Ajax POST /restaurer                         Edinah   10 min
+      [OK] Confirmation avant execution                 Edinah    5 min
+      [OK] Actualisation page apres restauration        Edinah   15 min
 
-Partie 2 :
-
-Données initiales
-    BASE MPIARO
-
-            PULL
-
-            OK Insertion de 10 véhicules
-
-            OK Insertion de 12 livreurs / chauffeurs
-
-            OK 5 livreurs/chauffeurs à 15000 Ar / livraison
-
-            OK 3 livreurs/chauffeurs à 18000 Ar / livraison
-
-            OK 4 livreurs/chauffeurs à 20000 Ar / livraison
-
-            OK Insertion de 5 zones de livraison
-
-            OK 3 zones à 12,5 %
-
-            OK 2 zones à 0 %
-            PUSH
-
-Gestion du supplément par zone
-    BASE MPIARO
-
-            PULL
-
-            OK Mise en place du supplément (%) selon les zones de livraison
-            PUSH
-
-            Page : Gestion des zones de livraison
-            Model EDINAH
-
-            OK Mise en place du supplément (%) selon les zones de livraison
-            PUSH
-
-Page : Gestion des zones de livraiso
-    Model EDINAH
-
-            PULL
-
-            OK getAllZones()
-
-            OK createZone($data)
-
-            OK updateZone($id, $data)
-
-            OK deleteZone($id)
-            PUSH
-
-    Controller MPIARO
-
-            PULL
-
-            OK Creer ZoneCon
-            PULL
-
-            OK Mise en place du supplément (%) selon les zones de livraison
-            PUSH
-
-Page : Gestion des zones de livraison
-        Model EDINAH
-
-            PULL
-
-            OK getAllZones()
-            PULL
-
-            OK Mise en place du supplément (%) selon les zones de livraison
-            PUSH
-
-Page : Gestion des zones de livraison
-    Model EDINAH
-
-            PULL
-
-            OK getAllZones()
-
-            OK createZone($data)
-
-            OK updateZone($id, $data)
-
-            OK deleteZone($id)
-            PUSH
-
-    Controller MPIARO
-
-            PULL
-
-            OK Creer ZoneController.php
-
-            OK Methode index() : liste des zones
-
-            OK Methode create() : formulaire d’ajout
-
-            OK Methode store() : insertion
-
-            OK Methode edit($id) : formulaire modification
-
-            OK Methode update($id)
-
-            OK Methode delete($id)
-            PUSH
-
-    Routes MPIARO
-
-            PULL
-
-            OK /zones
-
-            OK /zones/create
-
-            OK /zones/store
-
-            OK /zones/edit/@id
-
-            OK /zones/update/@id
-
-            OK /zones/delete/@id
-            PUSH
-
-PULL
-
-    View EDINAH
-
-            PULL
-
-            OK index.php (liste des zones)
-
-            OK create.php (ajout zone)
-
-            OK edit.php (modification zone)
-
-            OK CSS
-            PUSH
-
-Menu spécial : Suppression de toutes les livraisons
-    Controller MPIARO
-
-            PULL
-
-            PULL
-
-            OK Mise en place du supplément (%) selon les zones de livraison
-            PUSH
-
-Page : Gestion des zones de livraison
-    Model EDINAH
-
-            PULL
-
-            OK getAllZones()
-
-            OK createZone($data)
-
-            OK updateZone($id, $data)
-
-            OK deleteZone($id)
-            PUSH
-
-    Controller MPIARO
-
-            PULL
-
-            OK Creer ZoneController.php
-
-            OK Methode index() : liste des zones
-
-            OK Methode create() : formulaire d’ajout
-
-            OK Methode store() : insertion
-
-            OK Methode edit($id) : formulaire modification
-
-            OK Methode update($id)
-
-            OK Methode delete($id)
-            PUSH
-
-    Routes MPIARO
-
-        PULL
-
-            OK /zones
-
-            OK /zones/create
-
-            OK /zones/store
-
-            OK /zones/edit/@id
-
-            OK /zones/update/@id
-
-            OK /zones/delete/@id
-        PUSH
-
-    View EDINAH
-
-        PULL
-
-            OK index.php (liste des zones)
-
-            OK create.php (ajout zone)
-
-            OK edit.php (modification zone)
-
-            OK CSS
-        PUSH
-
-Menu spécial : Suppression de toutes les livraisons
-    Controller MPIARO
-
-        PULL
-
-            OK Methode deleteAllDeliveries()
-
-            OK Vérification du code de confirmation (9999) avant suppression
-        PUSH
-
-    Routes MPIARO
-
-        PULL
-
-            OK /deliveries/delete-all
-        PUSH
-
-    View EDINAH
-
-        PULL
-
-            OK Menu spécial
-
-            OK Formulaire de confirmation avec code 9999
-
-            OK Message de confirmation / erreur
-        PUSH
-            OK Methode deleteAllDeliveries()
-
-            OK Vérification du code de confirmation (9999) avant suppression
-        PUSH
-            OK Methode deleteAllDeliveries()
-
-            OK Vérific
-    Routes MPIARO
-
-        PULL
-
-            OK /deliveries/delete-all
-        PUSH
-
-View EDINAH
-
-        PULL
-
-            OK Menu spécial
-
-            OK Formulaire de confirmation avec code 9999
-
-            OK Message de confirmation / erreur
-        PUSH
-
-            OK createZone($data)
-
-            OK updateZone($id, $data)
-
-            OK deleteZone($id)
-        PUSH
-
-    Controller MPIARO
-
-        PULL
-
-            OK Creer ZoneController.php
-
-            OK Methode index() : liste des zones
-
-            OK Methode create() : formulaire d’ajout
-
-            OK Methode store() : insertion
-
-            OK Methode edit($id) : formulaire modification
-
-            OK Methode update($id)
-
-            OK Methode delete($id)
-        PUSH
-
-    Routes MPIARO
-
-        PULL
-
-            OK /zones
-
-            OK /zones/create
-
-            OK /zones/store
-
-            OK /zones/edit/@id
-
-            OK /zones/update/@id
-
-            OK /zones/delete/@id
-        PUSH
-
-    View EDINAH
-
-        PULL
-
-            OK index.php (liste des zones)
-
-            OK create.php (ajout zone)
-
-            OK edit.php (modification zone)
-
-            OK CSS
-        PUSH
-
-Menu spécial : Suppression de toutes les livraisons
-    Controller MPIARO
-
-        PULL
-
-            OK Methode deleteAllDeliveries()
-
-            OK Vérification du code de confirmation (9999) avant suppression
-        PUSH
-
-    Routes MPIARO
-
-        PULL
-
-            OK /deliveries/delete-all
-        PUSH
-
-        View EDINAH
-
-        PULL
-
-
-            OK Methode deleteAllDeliveries()
-
-            OK Véri
-            OK Menu spécial
-
-            OK Formulaire de confirmation avec code 9999
-
-            OK Message de confirmation / erreur
-
-            OK Methode index() : liste des zones
-
-            OK Methode create() : formulaire d’ajout
-
-            OK Methode store() : insertion
-
-            OK Methode edit($id) : formulaire modification
-
-            OK Methode update($id)
-
-            OK Methode delete($id)
-            PUSH
-
-    Routes MPIARO
-
-        PULL
-
-            OK /zones
-
-            OK /zones/create
-
-            OK /zones/store
-
-            OK /zones/edit/@id
-
-            OK /zones/update/@id
-
-            OK /zones/delete/@id
-        PUSH
-
-    View EDINAH
-
-        PULL
-
-            OK index.php (liste des zones)
-
-            OK create.php (ajout zone)
-
-            OK edit.php (modification zone)
-
-            OK CSS
-        PUSH
-
-Menu spécial : Suppression de toutes les livraisons
-    Controller MPIARO
-
-        PULL
-
-            OK Methode deleteAllDeliveries()
-
-            OK Vérification du code de confirmation (9999) avant suppression
-        PUSH
-
-    Routes MPIARO
-
-        PULL
-
-            OK /deliveries/delete-all
-        PUSH
-
-    View EDINAH
-
-        PULL
-
-            OK Menu spécial
-
-            OK Formulaire de confirmation avec code 9999
-
-            OK Message de confirmation / erreur
-        PUSH
