@@ -1,6 +1,9 @@
 <?php
 
-declare(strict_types=1);
+namespace app\controllers;
+
+use app\models\DonsModel;
+use Flight;
 
 class DonsController
 {
@@ -9,21 +12,21 @@ class DonsController
         Flight::render('dons');
     }
 
-    public function apiList(): void
+    public function listItems(): void
     {
-        $model = new DonsModel(Flight::db());
+        $model = new DonsModel();
         Flight::json([
             'success' => true,
             'data' => [
-                'dons' => $model->list(),
-                'types' => $model->types(),
+                'dons' => $model->getAll(),
+                'types' => $model->getTypes(),
             ],
         ]);
     }
 
-    public function apiCreate(): void
+    public function create(): void
     {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+        $payload = $this->payload();
         $typeId = (int) ($payload['type_id'] ?? 0);
         $quantite = (float) ($payload['quantite'] ?? 0);
         $dateDon = (string) ($payload['date_don'] ?? '');
@@ -33,14 +36,14 @@ class DonsController
             return;
         }
 
-        $model = new DonsModel(Flight::db());
-        $id = $model->create($typeId, $quantite, $dateDon);
-        Flight::json(['success' => true, 'id' => $id]);
+        $model = new DonsModel();
+        $model->create($typeId, $quantite, $dateDon);
+        Flight::json(['success' => true]);
     }
 
-    public function apiUpdate(int $id): void
+    public function update(int $id): void
     {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+        $payload = $this->payload();
         $typeId = (int) ($payload['type_id'] ?? 0);
         $quantite = (float) ($payload['quantite'] ?? 0);
         $dateDon = (string) ($payload['date_don'] ?? '');
@@ -50,15 +53,24 @@ class DonsController
             return;
         }
 
-        $model = new DonsModel(Flight::db());
+        $model = new DonsModel();
         $model->update($id, $typeId, $quantite, $dateDon);
         Flight::json(['success' => true]);
     }
 
-    public function apiDelete(int $id): void
+    public function delete(int $id): void
     {
-        $model = new DonsModel(Flight::db());
+        $model = new DonsModel();
         $model->delete($id);
         Flight::json(['success' => true]);
+    }
+
+    private function payload(): array
+    {
+        $requestData = Flight::request()->data->getData();
+        if (is_array($requestData) && !empty($requestData)) {
+            return $requestData;
+        }
+        return $_POST;
     }
 }

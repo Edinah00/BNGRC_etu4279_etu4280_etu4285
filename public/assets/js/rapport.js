@@ -1,257 +1,84 @@
-// ============================================
-// BNGRC Rapport - API Integration Version
-// ============================================
-
-// BNGRC Color Palette
 const COLORS = {
-    primary: '#0C2B4E',
-    secondary: '#1A3D64',
-    tertiary: '#1D546C',
-    accent: '#2980B9',
-    light: '#F4F4F4'
+    primary: '#3E5F44',
+    secondary: '#5E936C',
+    accent: '#93DA97',
+    light: '#E8FFD7'
 };
 
-// Store for chart instances
-let chartInstances = {
-    typeComparison: null,
-    globalDistribution: null,
-    regional: null
-};
-let isRefreshing = false;
+let typeComparisonChart = null;
+let globalDistributionChart = null;
+let regionalChart = null;
 
-// ============================================
-// API Client
-// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    loadRapportData();
+    updateLastUpdateTime();
+});
 
-const RapportAPI = {
-    /**
-     * Récupère toutes les statistiques du rapport
-     */
-    async fetchAll() {
-        try {
-            const response = await fetch('/api/rapport', {
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+function loadRapportData() {
+    fetch('/api/rapport')
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                updateSummaryCards(result.data.summary);
+                updateTypeComparisonChart(result.data.by_type);
+                updateGlobalDistributionChart(result.data.summary);
+                updateRegionalChart(result.data.by_region);
+            } else {
+                console.error('Erreur:', result.message);
             }
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.message || 'Erreur API');
-            }
-            
-            return result.data;
-        } catch (error) {
-            console.error('Erreur fetchAll:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Récupère uniquement le résumé
-     */
-    async fetchSummary() {
-        try {
-            const response = await fetch('/api/rapport/summary', {
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const result = await response.json();
-            return result.success ? result.data : null;
-        } catch (error) {
-            console.error('Erreur fetchSummary:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Récupère les données par type
-     */
-    async fetchByType() {
-        try {
-            const response = await fetch('/api/rapport/by-type', {
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const result = await response.json();
-            return result.success ? result.data : [];
-        } catch (error) {
-            console.error('Erreur fetchByType:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Récupère les données par région
-     */
-    async fetchByRegion() {
-        try {
-            const response = await fetch('/api/rapport/by-region', {
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const result = await response.json();
-            return result.success ? result.data : [];
-        } catch (error) {
-            console.error('Erreur fetchByRegion:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Récupère les données par ville
-     */
-    async fetchByCity(limit = 20) {
-        try {
-            const response = await fetch(`/api/rapport/by-city?limit=${limit}`, {
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const result = await response.json();
-            return result.success ? result.data : [];
-        } catch (error) {
-            console.error('Erreur fetchByCity:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Récupère l'évolution temporelle
-     */
-    async fetchTimeline(days = 30) {
-        try {
-            const response = await fetch(`/api/rapport/timeline?days=${days}`, {
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const result = await response.json();
-            return result.success ? result.data : { dons: [], distributions: [] };
-        } catch (error) {
-            console.error('Erreur fetchTimeline:', error);
-            throw error;
-        }
-    }
-};
-
-// ============================================
-// Render Summary Cards
-// ============================================
-
-function renderSummaryCards(summaryData) {
-    const container = document.getElementById('summaryCards');
-    if (!container) return;
-    
-    const cards = [
-        {
-            name: 'Besoins totaux',
-            value: summaryData.besoins_totaux || 0,
-            icon: '📋',
-            color: '#0C2B4E'
-        },
-        {
-            name: 'Besoins satisfaits',
-            value: summaryData.satisfaits || 0,
-            icon: '✅',
-            color: '#27AE60',
-            subtitle: `Distributions: ${formatNumber(summaryData.distribues || 0)} Ar<br>Achats: ${formatNumber(summaryData.achats || 0)} Ar`
-        },
-        {
-            name: 'Restants',
-            value: summaryData.restants || 0,
-            icon: '⏳',
-            color: '#E74C3C',
-            percentage: summaryData.taux_satisfaction || 0
-        }
-    ];
-    
-    const cardsHTML = cards.map(card => `
-        <div class="summary-card" style="border-left: 4px solid ${card.color};">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="text-align: left; width: 100%;">
-                    <p class="summary-label">${card.icon} ${escapeHtml(card.name)}</p>
-                    <p class="summary-value" style="color: ${card.color};">
-                        ${formatNumber(card.value)}
-                        <span class="summary-unit">Ar</span>
-                    </p>
-                    ${card.subtitle ? `<p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">${card.subtitle}</p>` : ''}
-                    ${card.percentage !== undefined ? `
-                        <div style="margin-top: 0.75rem;">
-                            <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                                <div style="width: ${Math.max(0, Math.min(100, Number(card.percentage) || 0))}%; height: 100%; background: ${card.color}; transition: width 0.5s ease;"></div>
-                            </div>
-                            <p style="font-size: 0.8rem; color: #6c757d; margin-top: 0.25rem;">
-                                Taux de satisfaction: ${(Number(card.percentage) || 0).toFixed(1)}%
-                            </p>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = cardsHTML;
+        })
+        .catch(error => {
+            console.error('Erreur de chargement:', error);
+        });
 }
 
-// ============================================
-// Chart: Type Comparison (Bar Chart)
-// ============================================
+function updateSummaryCards(summary) {
+    const summaryData = [
+        { name: 'Besoins totaux', value: summary.besoins_totaux, color: COLORS.primary },
+        { name: 'Dons reçus', value: summary.dons_recus, color: COLORS.secondary },
+        { name: 'Distribués', value: summary.distribues, color: COLORS.accent },
+        { name: 'Restants', value: summary.restants, color: COLORS.light }
+    ];
 
-function renderTypeComparisonChart(data) {
-    const ctx = document.getElementById('typeComparisonChart');
-    if (!ctx) return;
+    const container = document.getElementById('summaryCards');
+    container.innerHTML = '';
+
+    summaryData.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'summary-card';
+        card.innerHTML = `
+            <p class="summary-label">${item.name}</p>
+            <p class="summary-value" style="color: ${item.color}">
+                ${formatCurrency(item.value)} Ar
+            </p>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function updateTypeComparisonChart(data) {
+    const ctx = document.getElementById('typeComparisonChart').getContext('2d');
     
-    // Détruire l'ancien chart s'il existe
-    if (chartInstances.typeComparison) {
-        chartInstances.typeComparison.destroy();
+    if (typeComparisonChart) {
+        typeComparisonChart.destroy();
     }
-    
-    const cleanData = Array.isArray(data) ? data : [];
-    
-    chartInstances.typeComparison = new Chart(ctx, {
+
+    typeComparisonChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: cleanData.map(d => d.type || ''),
+            labels: data.map(item => item.type),
             datasets: [
                 {
                     label: 'Besoins',
-                    data: cleanData.map(d => d.besoins || 0),
-                    backgroundColor: 'rgba(12, 43, 78, 0.85)',
-                    borderColor: COLORS.primary,
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    hoverBackgroundColor: 'rgba(12, 43, 78, 0.95)'
+                    data: data.map(item => item.besoins),
+                    backgroundColor: COLORS.primary,
+                    borderRadius: 4
                 },
                 {
                     label: 'Dons',
-                    data: cleanData.map(d => d.dons || 0),
-                    backgroundColor: 'rgba(29, 84, 108, 0.75)',
-                    borderColor: COLORS.tertiary,
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    hoverBackgroundColor: 'rgba(29, 84, 108, 0.85)'
+                    data: data.map(item => item.dons),
+                    backgroundColor: COLORS.accent,
+                    borderRadius: 4
                 }
             ]
         },
@@ -260,35 +87,13 @@ function renderTypeComparisonChart(data) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
-                    labels: {
-                        font: {
-                            family: "'Barlow', sans-serif",
-                            size: 13,
-                            weight: '600'
-                        },
-                        color: COLORS.primary,
-                        padding: 15,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
+                    display: true,
+                    position: 'top'
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(12, 43, 78, 0.95)',
-                    titleFont: {
-                        family: "'Barlow Condensed', sans-serif",
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        family: "'Barlow', sans-serif",
-                        size: 13
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            return context.dataset.label + ': ' + formatNumber(context.parsed.y) + ' Ar';
+                            return context.dataset.label + ': ' + formatCurrency(context.parsed.y) + ' Ar';
                         }
                     }
                 }
@@ -296,32 +101,10 @@ function renderTypeComparisonChart(data) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(12, 43, 78, 0.08)',
-                        drawBorder: false
-                    },
                     ticks: {
-                        font: {
-                            family: "'Barlow', sans-serif",
-                            size: 11
-                        },
-                        color: COLORS.secondary,
                         callback: function(value) {
-                            return (value / 1000000).toFixed(1) + 'M';
+                            return formatCurrency(value);
                         }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        font: {
-                            family: "'Barlow', sans-serif",
-                            size: 12
-                        },
-                        color: COLORS.secondary
                     }
                 }
             }
@@ -329,38 +112,27 @@ function renderTypeComparisonChart(data) {
     });
 }
 
-// ============================================
-// Chart: Global Distribution (Pie Chart)
-// ============================================
-
-function renderGlobalDistributionChart(summaryData) {
-    const ctx = document.getElementById('globalDistributionChart');
-    if (!ctx) return;
+function updateGlobalDistributionChart(summary) {
+    const ctx = document.getElementById('globalDistributionChart').getContext('2d');
     
-    // Détruire l'ancien chart s'il existe
-    if (chartInstances.globalDistribution) {
-        chartInstances.globalDistribution.destroy();
+    if (globalDistributionChart) {
+        globalDistributionChart.destroy();
     }
-    
-    const data = [
-        { name: 'Besoins totaux', value: summaryData.besoins_totaux || 0 },
-        { name: 'Dons reçus', value: summaryData.dons_recus || 0 },
-        { name: 'Distribués', value: summaryData.distribues || 0 },
-        { name: 'Restants', value: summaryData.restants || 0 }
-    ].filter(d => d.value > 0);
-    
-    const chartColors = [COLORS.primary, COLORS.secondary, COLORS.tertiary, COLORS.accent];
-    
-    chartInstances.globalDistribution = new Chart(ctx, {
-        type: 'doughnut',
+
+    const chartData = [
+        { name: 'Besoins totaux', value: summary.besoins_totaux },
+        { name: 'Dons reçus', value: summary.dons_recus },
+        { name: 'Distribués', value: summary.distribues },
+        { name: 'Restants', value: summary.restants }
+    ].filter(item => item.value > 0);
+
+    globalDistributionChart = new Chart(ctx, {
+        type: 'pie',
         data: {
-            labels: data.map(d => d.name),
+            labels: chartData.map(item => item.name),
             datasets: [{
-                data: data.map(d => d.value),
-                backgroundColor: chartColors.slice(0, data.length),
-                borderColor: COLORS.light,
-                borderWidth: 3,
-                hoverOffset: 12
+                data: chartData.map(item => item.value),
+                backgroundColor: [COLORS.primary, COLORS.secondary, COLORS.accent, COLORS.light]
             }]
         },
         options: {
@@ -368,73 +140,41 @@ function renderGlobalDistributionChart(summaryData) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    labels: {
-                        font: {
-                            family: "'Barlow', sans-serif",
-                            size: 12,
-                            weight: '600'
-                        },
-                        color: COLORS.primary,
-                        padding: 15,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
+                    display: true,
+                    position: 'bottom'
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(12, 43, 78, 0.95)',
-                    titleFont: {
-                        family: "'Barlow Condensed', sans-serif",
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        family: "'Barlow', sans-serif",
-                        size: 13
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
-                            return context.label + ': ' + formatNumber(context.parsed) + ' Ar (' + percentage + '%)';
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return label + ': ' + formatCurrency(value) + ' Ar (' + percentage + '%)';
                         }
                     }
                 }
-            },
-            cutout: '65%'
+            }
         }
     });
 }
 
-// ============================================
-// Chart: Regional Needs (Bar Chart)
-// ============================================
-
-function renderRegionalChart(data) {
-    const ctx = document.getElementById('regionalChart');
-    if (!ctx) return;
+function updateRegionalChart(data) {
+    const ctx = document.getElementById('regionalChart').getContext('2d');
     
-    // Détruire l'ancien chart s'il existe
-    if (chartInstances.regional) {
-        chartInstances.regional.destroy();
+    if (regionalChart) {
+        regionalChart.destroy();
     }
-    
-    const cleanData = Array.isArray(data) ? data : [];
-    
-    chartInstances.regional = new Chart(ctx, {
+
+    regionalChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: cleanData.map(d => (d.region || '').substring(0, 15)),
+            labels: data.map(item => item.region.substring(0, 15)),
             datasets: [{
                 label: 'Besoins',
-                data: cleanData.map(d => d.besoins || 0),
-                backgroundColor: 'rgba(26, 61, 100, 0.8)',
-                borderColor: COLORS.secondary,
-                borderWidth: 2,
-                borderRadius: 8,
-                hoverBackgroundColor: 'rgba(26, 61, 100, 0.95)'
+                data: data.map(item => item.besoins),
+                backgroundColor: COLORS.secondary,
+                borderRadius: 4
             }]
         },
         options: {
@@ -445,21 +185,9 @@ function renderRegionalChart(data) {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(12, 43, 78, 0.95)',
-                    titleFont: {
-                        family: "'Barlow Condensed', sans-serif",
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        family: "'Barlow', sans-serif",
-                        size: 13
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            return 'Valeur: ' + formatNumber(context.parsed.y) + ' Ar';
+                            return 'Besoins: ' + formatCurrency(context.parsed.y) + ' Ar';
                         }
                     }
                 }
@@ -467,32 +195,10 @@ function renderRegionalChart(data) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(12, 43, 78, 0.08)',
-                        drawBorder: false
-                    },
                     ticks: {
-                        font: {
-                            family: "'Barlow', sans-serif",
-                            size: 11
-                        },
-                        color: COLORS.secondary,
                         callback: function(value) {
-                            return (value / 1000000).toFixed(1) + 'M';
+                            return formatCurrency(value);
                         }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        font: {
-                            family: "'Barlow', sans-serif",
-                            size: 11
-                        },
-                        color: COLORS.secondary
                     }
                 }
             }
@@ -500,177 +206,38 @@ function renderRegionalChart(data) {
     });
 }
 
-// ============================================
-// Utility Functions
-// ============================================
-
-function formatNumber(value) {
-    return Number(value || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
-}
-
-function escapeHtml(value) {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function showError(message) {
-    const container = document.getElementById('summaryCards');
-    if (container) {
-        container.innerHTML = `
-            <div class="summary-card" style="grid-column: 1 / -1;">
-                <p class="summary-label" style="color: #E74C3C;">Erreur</p>
-                <p class="summary-value" style="font-size: 1rem; color: #E74C3C;">
-                    ${escapeHtml(message)}
-                </p>
-            </div>
-        `;
-    }
-}
-
-function showLoading() {
-    const container = document.getElementById('summaryCards');
-    if (container) {
-        container.innerHTML = `
-            <div class="summary-card" style="grid-column: 1 / -1; text-align: center;">
-                <p class="summary-label">Chargement en cours...</p>
-                <div style="margin: 1rem auto; width: 40px; height: 40px; border: 4px solid rgba(12, 43, 78, 0.1); border-top-color: #0C2B4E; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            </div>
-        `;
-    }
+function refreshRapport() {
+    const button = document.getElementById('refreshButton');
+    button.disabled = true;
+    button.innerHTML = '<svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Actualisation...';
+    
+    loadRapportData();
+    
+    setTimeout(() => {
+        button.disabled = false;
+        button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Actualiser';
+        updateLastUpdateTime();
+    }, 1000);
 }
 
 function updateLastUpdateTime() {
-    const lastUpdateEl = document.getElementById('lastUpdateTime');
-    if (!lastUpdateEl) return;
-
     const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-    lastUpdateEl.textContent = `${hh}:${mm}:${ss}`;
+    const timeString = now.toLocaleTimeString('fr-FR');
+    document.getElementById('lastUpdateTime').textContent = timeString;
 }
 
-async function refreshRapport() {
-    if (isRefreshing) return;
+function formatCurrency(value) {
+    return new Intl.NumberFormat('fr-FR').format(Math.round(value));
+}
 
-    const refreshBtn = document.getElementById('refreshButton');
-
-    try {
-        isRefreshing = true;
-        if (refreshBtn) {
-            refreshBtn.disabled = true;
-            refreshBtn.classList.add('loading');
-        }
-
-        const data = await RapportAPI.fetchAll();
-        if (!data) {
-            throw new Error('Aucune donnée reçue');
-        }
-
-        renderSummaryCards(data.summary || {});
-        renderTypeComparisonChart(data.by_type || []);
-        renderGlobalDistributionChart(data.summary || {});
-        renderRegionalChart(data.by_region || []);
-        updateLastUpdateTime();
-    } catch (error) {
-        console.error('Erreur refreshRapport:', error);
-        showError('Impossible d actualiser les donnees du rapport.');
-    } finally {
-        isRefreshing = false;
-        if (refreshBtn) {
-            refreshBtn.disabled = false;
-            refreshBtn.classList.remove('loading');
-        }
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
-}
-
-// ============================================
-// Mobile Menu Toggle
-// ============================================
-
-function initMobileMenu() {
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768) {
-                if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                    sidebar.classList.remove('active');
-                }
-            }
-        });
+    .spin {
+        animation: spin 1s linear infinite;
     }
-}
-
-// ============================================
-// Initialize Rapport
-// ============================================
-
-async function initRapport() {
-    console.log('📊 Initializing BNGRC Rapport...');
-    
-    showLoading();
-    
-    try {
-        // Charger toutes les données en une fois
-        const data = await RapportAPI.fetchAll();
-        
-        if (!data) {
-            throw new Error('Aucune donnée reçue de l\'API');
-        }
-        
-        // Rendre tous les composants
-        renderSummaryCards(data.summary || {});
-        renderTypeComparisonChart(data.by_type || []);
-        renderGlobalDistributionChart(data.summary || {});
-        renderRegionalChart(data.by_region || []);
-        updateLastUpdateTime();
-        
-        console.log('✅ BNGRC Rapport initialized successfully');
-        console.log(`📈 Summary loaded:`, data.summary);
-        console.log(`📊 ${data.by_type?.length || 0} types, ${data.by_region?.length || 0} regions`);
-    } catch (error) {
-        console.error('❌ Erreur lors de l\'initialisation:', error);
-        showError('Impossible de charger les données du rapport. Veuillez réessayer.');
-    }
-    
-    // Initialiser le menu mobile
-    initMobileMenu();
-}
-
-// ============================================
-// Load on DOM Ready
-// ============================================
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initRapport);
-} else {
-    initRapport();
-}
-
-// ============================================
-// Export for external use
-// ============================================
-
-window.BNGRCRapport = {
-    API: RapportAPI,
-    refreshRapport,
-    renderSummaryCards,
-    renderTypeComparisonChart,
-    renderGlobalDistributionChart,
-    renderRegionalChart,
-    formatNumber,
-    escapeHtml
-};
-
-window.refreshRapport = refreshRapport;
+`;
+document.head.appendChild(style);

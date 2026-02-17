@@ -1,44 +1,43 @@
 <?php
-
-declare(strict_types=1);
-
-use flight\net\Router;
 use app\controllers\RapportController;
 
-
-$router->group('', function (Router $router) use ($app) {
-    
-    $router->get('/rapport', function(): void {
-        Flight::render('rapport');
-    });
-    
-    $router->group('/api/rapport', function (Router $router) {
-        $router->get('', function(): void {
-            RapportController::index();
-        });
-        
-        $router->get('/summary', function(): void {
-            RapportController::getSummary();
-        });
-        
-        $router->get('/by-type', function(): void {
-            RapportController::getByType();
-        });
-        
-        $router->get('/by-region', function(): void {
-            RapportController::getByRegion();
-        });
-        
-        $router->get('/by-city', function(): void {
-            RapportController::getByCity();
-        });
-        
-        $router->get('/timeline', function(): void {
-            RapportController::getTimeline();
-        });
-        
-        $router->get('/export/pdf', function(): void {
-            RapportController::exportPdf();
-        });
-    });
+Flight::route('GET /rapport', function() {
+    $controller = new RapportController();
+    $controller->page();
 });
+
+Flight::route('GET /api/rapport', function() {
+    $controller = new RapportController();
+    $controller->index();
+});
+
+Flight::route('GET /api/rapport/summary', function() {
+    $controller = new RapportController();
+    $controller->getSummary();
+});
+
+Flight::route('GET /api/rapport/by-type', function() {
+    $controller = new RapportController();
+    $controller->getByType();
+});
+
+Flight::route('GET /api/rapport/by-region', function() {
+    $controller = new RapportController();
+    $controller->getByRegion();
+});
+
+Flight::route('GET /api/rapport/by-city', function() {
+    $controller = new RapportController();
+    $controller->getByCity();
+});
+
+Flight::route('GET /api/rapport/timeline', function() {
+    $controller = new RapportController();
+    $controller->getTimeline();
+});
+
+Flight::route('GET /api/rapport/export/pdf', function() {
+    $controller = new RapportController();
+    $controller->exportPdf();
+});
+?>

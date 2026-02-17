@@ -1,20 +1,17 @@
 <?php
 
-declare(strict_types=1);
+use app\controllers\DashboardController;
 
-require_once __DIR__ . '/../models/DashboardModel.php';
-require_once __DIR__ . '/../controllers/DashboardController.php';
-
-$router->get('/', function (): void {
+$router->get('/', function (){
     Flight::redirect('/dashboard');
 });
 
-$router->get('/dashboard', function (): void {
+$router->get('/dashboard', function (){
     $controller = new DashboardController();
     $controller->index();
 });
 
-$router->get('/api/dashboard', function (): void {
+$router->get('/api/dashboard', function (){
     $controller = new DashboardController();
-    $controller->apiData();
+    $controller->data();
 });

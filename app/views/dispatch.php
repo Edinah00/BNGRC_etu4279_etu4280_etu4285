@@ -24,9 +24,12 @@
                     <h1 class="page-title">Simulation de Dispatch</h1>
                     <p class="page-description">Distribution FIFO des dons selon les besoins non satisfaits</p>
                 </div>
-                <button class="btn-primary" id="simulateBtn" type="button">
-                    <span>Simuler le dispatch automatique</span>
-                </button>
+                <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                    <button class="btn-primary" id="simulateBtn" type="button">
+                        <span>Simuler le dispatch automatique</span>
+                    </button>
+                    <button class="btn-success" id="validateBtn" type="button" style="display:none;">Valider et enregistrer</button>
+                </div>
             </div>
         </header>
 
@@ -74,7 +77,6 @@
                 <div id="summaryBlock"></div>
                 <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
                     <button class="btn-primary" id="cancelBtn" type="button" style="background:#7f8c8d;">Annuler</button>
-                    <button class="btn-success" id="validateBtn" type="button">Valider et enregistrer</button>
                 </div>
             </div>
         </section>

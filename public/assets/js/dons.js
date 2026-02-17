@@ -1,41 +1,213 @@
-const state = { dons: [], types: [], editing: null };
-const elements = {
-  addBtn: document.getElementById('addBtn'), modalOverlay: document.getElementById('modalOverlay'), modalClose: document.getElementById('modalClose'), cancelBtn: document.getElementById('cancelBtn'), saveBtn: document.getElementById('saveBtn'), modalTitle: document.getElementById('modalTitle'), tableBody: document.getElementById('tableBody'),
-  inputType: document.getElementById('inputType'), inputDescription: document.getElementById('inputDescription'), inputQuantite: document.getElementById('inputQuantite'), inputValeur: document.getElementById('inputValeur'), inputDate: document.getElementById('inputDate')
+var state = { dons: [], types: [], editing: null };
+var elements = {
+  addBtn: document.getElementById('addBtn'),
+  modalOverlay: document.getElementById('modalOverlay'),
+  modalClose: document.getElementById('modalClose'),
+  cancelBtn: document.getElementById('cancelBtn'),
+  saveBtn: document.getElementById('saveBtn'),
+  modalTitle: document.getElementById('modalTitle'),
+  tableBody: document.getElementById('tableBody'),
+  inputType: document.getElementById('inputType'),
+  inputQuantite: document.getElementById('inputQuantite'),
+  inputDate: document.getElementById('inputDate')
 };
 
-function escapeHtml(v){return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function fmt(n){return Number(n||0).toLocaleString('fr-FR');}
-async function api(url, options={}){ const res=await fetch(url,{headers:{'Content-Type':'application/json',Accept:'application/json'},...options}); const payload=await res.json(); if(!res.ok||payload.success===false) throw new Error(payload.message||`HTTP ${res.status}`); return payload; }
-
-function openModal(){ elements.modalOverlay.classList.add('active'); }
-function closeModal(){ elements.modalOverlay.classList.remove('active'); state.editing=null; elements.modalTitle.textContent='Ajouter un don'; elements.inputType.value=''; elements.inputQuantite.value=''; elements.inputDate.value=new Date().toISOString().slice(0,10); if(elements.inputDescription) elements.inputDescription.value=''; if(elements.inputValeur) elements.inputValeur.value=''; }
-
-function populateTypes(){ elements.inputType.innerHTML = state.types.map((t)=>`<option value="${t.id}">${escapeHtml(t.libelle)}</option>`).join(''); }
-
-function renderTable(){
-  if(!state.dons.length){ elements.tableBody.innerHTML='<tr><td colspan="5" class="empty-row">Aucun don</td></tr>'; return; }
-  elements.tableBody.innerHTML = state.dons.map((d)=>`<tr><td>${new Date(d.date_don).toLocaleDateString('fr-FR')}</td><td>${escapeHtml(d.type||'—')}</td><td>${fmt(d.quantite)}</td><td style="font-weight:600;">${fmt(d.valeur_estimee)} Ar</td><td><div class="action-buttons"><button class="action-btn edit-btn" data-id="${d.id}">Edit</button><button class="action-btn delete-btn delete" data-id="${d.id}">Del</button></div></td></tr>`).join('');
-  document.querySelectorAll('.edit-btn').forEach((btn)=>btn.addEventListener('click',()=>{ const d=state.dons.find((x)=>String(x.id)===btn.dataset.id); if(!d) return; state.editing=d; elements.modalTitle.textContent='Modifier un don'; elements.inputType.value=d.type_id; elements.inputQuantite.value=d.quantite; elements.inputDate.value=String(d.date_don).slice(0,10); openModal(); }));
-  document.querySelectorAll('.delete-btn').forEach((btn)=>btn.addEventListener('click',async()=>{ if(!confirm('Supprimer ce don ?')) return; try{ await api(`/api/dons/${btn.dataset.id}`,{method:'DELETE'}); await loadData(); }catch(e){ alert(e.message);} }));
+function fmt(n){
+    return Number(n||0).toLocaleString('fr-FR');
 }
 
-async function loadData(){ const payload=await api('/api/dons'); state.dons=payload.data?.dons||[]; state.types=payload.data?.types||[]; populateTypes(); renderTable(); }
+function openModal(){
+    elements.modalOverlay.classList.add('active');
+}
 
-async function saveDon(){ const data={ type_id:Number(elements.inputType.value||0), quantite:Number(elements.inputQuantite.value||0), date_don:elements.inputDate.value }; if(!data.type_id||data.quantite<=0||!data.date_don){ alert('Champs invalides'); return; } try{ if(state.editing){ await api(`/api/dons/${state.editing.id}`,{method:'PUT',body:JSON.stringify(data)}); } else { await api('/api/dons',{method:'POST',body:JSON.stringify(data)}); } closeModal(); await loadData(); }catch(e){ alert(e.message);} }
+function closeModal(){
+    elements.modalOverlay.classList.remove('active');
+    state.editing = null;
+    elements.modalTitle.textContent = 'Ajouter un don';
+    elements.inputType.value = '';
+    elements.inputQuantite.value = '';
+    elements.inputDate.value = new Date().toISOString().slice(0,10);
+}
+
+function populateTypes(){
+    elements.inputType.textContent = '';
+    
+    for (var i = 0; i < state.types.length; i++) {
+        var t = state.types[i];
+        var opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.libelle;
+        elements.inputType.appendChild(opt);
+    }
+}
+
+function renderTable(){
+    elements.tableBody.textContent = '';
+    
+    if(state.dons.length === 0){
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 5;
+        td.className = 'empty-row';
+        td.textContent = 'Aucun don';
+        tr.appendChild(td);
+        elements.tableBody.appendChild(tr);
+        return;
+    }
+    
+    for (var i = 0; i < state.dons.length; i++) {
+        var d = state.dons[i];
+        var tr = document.createElement('tr');
+        
+        var tdDate = document.createElement('td');
+        tdDate.textContent = new Date(d.date_don).toLocaleDateString('fr-FR');
+        
+        var tdType = document.createElement('td');
+        tdType.textContent = d.type || '—';
+        
+        var tdQte = document.createElement('td');
+        tdQte.textContent = fmt(d.quantite);
+        
+        var tdValeur = document.createElement('td');
+        tdValeur.style.fontWeight = '600';
+        tdValeur.textContent = fmt(d.valeur_estimee) + ' Ar';
+        
+        var tdActions = document.createElement('td');
+        var divActions = document.createElement('div');
+        divActions.className = 'action-buttons';
+        
+        var btnEdit = document.createElement('button');
+        btnEdit.className = 'action-btn edit-btn';
+        btnEdit.dataset.id = d.id;
+        btnEdit.textContent = 'Edit';
+        btnEdit.addEventListener('click', function() {
+            var donId = this.dataset.id;
+            var don = null;
+            for (var j = 0; j < state.dons.length; j++) {
+                if (String(state.dons[j].id) === donId) {
+                    don = state.dons[j];
+                    break;
+                }
+            }
+            if (!don) return;
+            state.editing = don;
+            elements.modalTitle.textContent = 'Modifier un don';
+            elements.inputType.value = don.type_id;
+            elements.inputQuantite.value = don.quantite;
+            elements.inputDate.value = String(don.date_don).slice(0,10);
+            openModal();
+        });
+        
+        var btnDelete = document.createElement('button');
+        btnDelete.className = 'action-btn delete-btn delete';
+        btnDelete.dataset.id = d.id;
+        btnDelete.textContent = 'Del';
+        btnDelete.addEventListener('click', function() {
+            if (!confirm('Supprimer ce don ?')) return;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', '/api/dons/' + this.dataset.id, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    loadData();
+                } else {
+                    alert('Erreur lors de la suppression.');
+                }
+            };
+            
+            xhr.send();
+        });
+        
+        divActions.appendChild(btnEdit);
+        divActions.appendChild(btnDelete);
+        tdActions.appendChild(divActions);
+        
+        tr.appendChild(tdDate);
+        tr.appendChild(tdType);
+        tr.appendChild(tdQte);
+        tr.appendChild(tdValeur);
+        tr.appendChild(tdActions);
+        
+        elements.tableBody.appendChild(tr);
+    }
+}
+
+function loadData(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/dons', true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            if (response.success && response.data) {
+                state.dons = response.data.dons || [];
+                state.types = response.data.types || [];
+                populateTypes();
+                renderTable();
+            }
+        }
+    };
+    
+    xhr.send();
+}
+
+function saveDon(){
+    var data = {
+        type_id: Number(elements.inputType.value||0),
+        quantite: Number(elements.inputQuantite.value||0),
+        date_don: elements.inputDate.value
+    };
+    
+    if(!data.type_id || data.quantite<=0 || !data.date_don){
+        alert('Champs invalides');
+        return;
+    }
+    
+    var xhr = new XMLHttpRequest();
+    var method = state.editing ? 'PUT' : 'POST';
+    var url = state.editing ? '/api/dons/' + state.editing.id : '/api/dons';
+    
+    xhr.open(method, url, true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            closeModal();
+            loadData();
+        } else {
+            alert('Erreur lors de l enregistrement.');
+        }
+    };
+    
+    xhr.send(JSON.stringify(data));
+}
 
 function init(){
-  elements.addBtn?.addEventListener('click',openModal);
-  elements.modalClose?.addEventListener('click',closeModal);
-  elements.cancelBtn?.addEventListener('click',closeModal);
-  elements.saveBtn?.addEventListener('click',saveDon);
-  elements.modalOverlay?.addEventListener('click',(e)=>{ if(e.target===elements.modalOverlay) closeModal();});
+  if (elements.addBtn) elements.addBtn.addEventListener('click',openModal);
+  if (elements.modalClose) elements.modalClose.addEventListener('click',closeModal);
+  if (elements.cancelBtn) elements.cancelBtn.addEventListener('click',closeModal);
+  if (elements.saveBtn) elements.saveBtn.addEventListener('click',saveDon);
+  if (elements.modalOverlay) {
+      elements.modalOverlay.addEventListener('click', function(e) {
+          if(e.target === elements.modalOverlay) closeModal();
+      });
+  }
   closeModal();
-  const action = new URLSearchParams(window.location.search).get('action');
+  
+  var action = new URLSearchParams(window.location.search).get('action');
   if (action === 'create') {
     openModal();
   }
-  loadData().catch((e)=>{ elements.tableBody.innerHTML=`<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`; });
+  
+  loadData();
 }
 
-document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

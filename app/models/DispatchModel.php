@@ -1,5 +1,4 @@
 <?php
-
 namespace app\models;
 
 use Flight;
@@ -7,47 +6,57 @@ use PDO;
 
 class DispatchModel
 {
-    private static function db(): PDO
+    public function getDonsDisponibles()
     {
-        return Flight::db();
+        $sql = "SELECT d.id_don, d.id_type, tb.libelle AS type_besoin,
+                       d.quantite AS quantite_totale, d.date_don,
+                       COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_distribuee,
+                       d.quantite - COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_restante
+                FROM don d
+                JOIN type_besoin tb ON tb.id_type = d.id_type
+                LEFT JOIN distribution dist ON dist.id_don = d.id_don
+                GROUP BY d.id_don, d.id_type, tb.libelle, d.quantite, d.date_don
+                HAVING d.quantite - COALESCE(SUM(dist.quantite_attribuee), 0) > 0
+                ORDER BY d.date_don ASC, d.id_don ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getAvailableDonStates(): array
+    public function getBesoinsNonSatisfaits($idType)
     {
-        $sql = "
-            SELECT
-                d.id_don,
-                d.id_type,
-                tb.libelle AS type_besoin,
-                d.quantite AS quantite_totale,
-                d.date_don,
-                COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_distribuee,
-                d.quantite - COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_restante
-            FROM don d
-            JOIN type_besoin tb ON tb.id_type = d.id_type
-            LEFT JOIN distribution dist ON dist.id_don = d.id_don
-            GROUP BY d.id_don, d.id_type, tb.libelle, d.quantite, d.date_don
-            HAVING d.quantite - COALESCE(SUM(dist.quantite_attribuee), 0) > 0
-            ORDER BY d.date_don ASC, d.id_don ASC
-        ";
+        $sql = "SELECT b.id_besoin, b.id_ville, v.nom AS ville, b.id_type,
+                       b.nom_produit, b.quantite AS quantite_demandee, b.date_saisie
+                FROM besoin b
+                JOIN ville v ON v.id_ville = b.id_ville
+                WHERE b.id_type = ?
+                ORDER BY b.date_saisie ASC, b.id_besoin ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute([$idType]);
+        $needs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return self::db()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-    }
+        $sqlDist = "SELECT dist.id_ville, COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_attribuee
+                    FROM distribution dist
+                    JOIN don d ON d.id_don = dist.id_don
+                    WHERE d.id_type = ?
+                    GROUP BY dist.id_ville";
+        $stmtDist = Flight::db()->prepare($sqlDist);
+        $stmtDist->execute([$idType]);
+        $distRows = $stmtDist->fetchAll(PDO::FETCH_ASSOC);
 
-    public static function getUnsatisfiedNeedsByType(int $idType): array
-    {
-        $needs = self::getNeedRowsByType($idType);
-        $distributedByCity = self::getDistributedTotalsByCityForType($idType);
+        $distributedByCity = [];
+        foreach ($distRows as $row) {
+            $distributedByCity[(int) $row['id_ville']] = (float) $row['quantite_attribuee'];
+        }
 
         $result = [];
         foreach ($needs as $need) {
             $cityId = (int) $need['id_ville'];
-            $alreadyDistributed = (float) ($distributedByCity[$cityId] ?? 0.0);
+            $alreadyDistributed = $distributedByCity[$cityId] ?? 0.0;
             $needQty = (float) $need['quantite_demandee'];
-
-            $consumedOnThisNeed = min($needQty, max($alreadyDistributed, 0));
-            $remaining = $needQty - $consumedOnThisNeed;
-            $distributedByCity[$cityId] = max($alreadyDistributed - $consumedOnThisNeed, 0);
+            $consumed = min($needQty, max($alreadyDistributed, 0));
+            $remaining = $needQty - $consumed;
+            $distributedByCity[$cityId] = max($alreadyDistributed - $consumed, 0);
 
             if ($remaining > 0) {
                 $need['quantite_restante'] = $remaining;
@@ -58,9 +67,9 @@ class DispatchModel
         return $result;
     }
 
-    public static function getEligibleCitiesByType(int $idType): array
+    public function getVillesEligibles($idType)
     {
-        $needs = self::getUnsatisfiedNeedsByType($idType);
+        $needs = $this->getBesoinsNonSatisfaits($idType);
         $cities = [];
 
         foreach ($needs as $need) {
@@ -75,204 +84,119 @@ class DispatchModel
             $cities[$cityId]['besoin_restant'] += (float) $need['quantite_restante'];
         }
 
-        usort($cities, static fn($a, $b) => strcmp((string) $a['nom'], (string) $b['nom']));
+        usort($cities, function($a, $b) {
+            return strcmp($a['nom'], $b['nom']);
+        });
+
         return array_values($cities);
     }
 
-    public static function getDonRemainingsByIds(array $donIds): array
+    public function getDonRemainingsByIds(array $donIds)
     {
         if (empty($donIds)) {
             return [];
         }
 
-        $params = [];
-        $placeholders = [];
-        foreach ($donIds as $index => $donId) {
-            $key = ':id_' . $index;
-            $placeholders[] = $key;
-            $params[$key] = (int) $donId;
-        }
-
-        $sql = "
-            SELECT
-                d.id_don,
-                d.id_type,
-                d.quantite AS quantite_totale,
-                COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_distribuee,
-                d.quantite - COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_restante
-            FROM don d
-            LEFT JOIN distribution dist ON dist.id_don = d.id_don
-            WHERE d.id_don IN (" . implode(', ', $placeholders) . ")
-            GROUP BY d.id_don, d.id_type, d.quantite
-        ";
-
-        $stmt = self::db()->prepare($sql);
-        $stmt->execute($params);
+        $placeholders = implode(',', array_fill(0, count($donIds), '?'));
+        $sql = "SELECT d.id_don, d.id_type, d.quantite AS quantite_totale,
+                       COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_distribuee,
+                       d.quantite - COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_restante
+                FROM don d
+                LEFT JOIN distribution dist ON dist.id_don = d.id_don
+                WHERE d.id_don IN ($placeholders)
+                GROUP BY d.id_don, d.id_type, d.quantite";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute($donIds);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $map = [];
         foreach ($rows as $row) {
-            $map[(int) $row['id_don']] = [
-                'id_type' => (int) $row['id_type'],
-                'quantite_restante' => (float) $row['quantite_restante'],
-                'quantite_totale' => (float) $row['quantite_totale'],
-            ];
+            $idDon = (int) $row['id_don'];
+            $row['quantite_totale'] = (float) $row['quantite_totale'];
+            $row['quantite_distribuee'] = (float) $row['quantite_distribuee'];
+            $row['quantite_restante'] = (float) $row['quantite_restante'];
+            $map[$idDon] = $row;
         }
 
         return $map;
     }
 
-    public static function getCityTypeRemainings(array $pairs): array
+    public function getCityTypeRemainings(array $pairs)
     {
         if (empty($pairs)) {
             return [];
         }
 
-        $needRows = self::getNeedTotalsByPairs($pairs);
-        $distRows = self::getDistributionTotalsByPairs($pairs);
-
-        $needMap = [];
-        foreach ($needRows as $row) {
-            $key = $row['id_ville'] . '-' . $row['id_type'];
-            $needMap[$key] = (float) $row['quantite_besoin'];
+        $placeholders = [];
+        $params = [];
+        foreach ($pairs as $pair) {
+            $placeholders[] = '(?, ?)';
+            $params[] = (int) ($pair['id_ville'] ?? 0);
+            $params[] = (int) ($pair['id_type'] ?? 0);
         }
+
+        $inClause = implode(',', $placeholders);
+
+        $sqlNeeds = "SELECT b.id_ville, b.id_type, SUM(b.quantite) AS quantite_demandee
+                     FROM besoin b
+                     WHERE (b.id_ville, b.id_type) IN ($inClause)
+                     GROUP BY b.id_ville, b.id_type";
+        $stmtNeeds = Flight::db()->prepare($sqlNeeds);
+        $stmtNeeds->execute($params);
+        $needRows = $stmtNeeds->fetchAll(PDO::FETCH_ASSOC);
+
+        $sqlDist = "SELECT dist.id_ville, d.id_type, SUM(dist.quantite_attribuee) AS quantite_distribuee
+                    FROM distribution dist
+                    JOIN don d ON d.id_don = dist.id_don
+                    WHERE (dist.id_ville, d.id_type) IN ($inClause)
+                    GROUP BY dist.id_ville, d.id_type";
+        $stmtDist = Flight::db()->prepare($sqlDist);
+        $stmtDist->execute($params);
+        $distRows = $stmtDist->fetchAll(PDO::FETCH_ASSOC);
 
         $distMap = [];
         foreach ($distRows as $row) {
-            $key = $row['id_ville'] . '-' . $row['id_type'];
-            $distMap[$key] = (float) $row['quantite_attribuee'];
+            $key = (int) $row['id_ville'] . '-' . (int) $row['id_type'];
+            $distMap[$key] = (float) $row['quantite_distribuee'];
         }
 
-        $result = [];
-        foreach ($needMap as $key => $needQty) {
-            $result[$key] = max($needQty - ($distMap[$key] ?? 0.0), 0);
+        $remainings = [];
+        foreach ($needRows as $row) {
+            $key = (int) $row['id_ville'] . '-' . (int) $row['id_type'];
+            $demand = (float) $row['quantite_demandee'];
+            $distributed = $distMap[$key] ?? 0.0;
+            $remaining = $demand - $distributed;
+            if ($remaining > 0) {
+                $remainings[$key] = $remaining;
+            }
         }
 
-        return $result;
+        return $remainings;
     }
 
-    public static function createDistribution(int $idDon, int $idVille, float $quantite): void
+    public function createDistribution($idDon, $idVille, $quantite)
     {
-        $sql = "
-            INSERT INTO distribution (id_don, id_ville, quantite_attribuee, date_dispatch)
-            VALUES (:id_don, :id_ville, :quantite_attribuee, NOW())
-        ";
-
-        $stmt = self::db()->prepare($sql);
-        $stmt->execute([
-            ':id_don' => $idDon,
-            ':id_ville' => $idVille,
-            ':quantite_attribuee' => $quantite,
-        ]);
+        $sql = "INSERT INTO distribution (id_don, id_ville, quantite_attribuee, date_dispatch)
+                VALUES (?, ?, ?, NOW())";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$idDon, $idVille, $quantite]);
     }
 
-    public static function beginTransaction(): void
+    public function beginTransaction()
     {
-        self::db()->beginTransaction();
+        Flight::db()->beginTransaction();
     }
 
-    public static function commit(): void
+    public function commit()
     {
-        self::db()->commit();
+        Flight::db()->commit();
     }
 
-    public static function rollback(): void
+    public function rollback()
     {
-        if (self::db()->inTransaction()) {
-            self::db()->rollBack();
+        if (Flight::db()->inTransaction()) {
+            Flight::db()->rollBack();
         }
-    }
-
-    private static function getNeedRowsByType(int $idType): array
-    {
-        $sql = "
-            SELECT
-                b.id_besoin,
-                b.id_ville,
-                v.nom AS ville,
-                b.id_type,
-                b.nom_produit,
-                b.quantite AS quantite_demandee,
-                b.date_saisie
-            FROM besoin b
-            JOIN ville v ON v.id_ville = b.id_ville
-            WHERE b.id_type = :id_type
-            ORDER BY b.date_saisie ASC, b.id_besoin ASC
-        ";
-
-        $stmt = self::db()->prepare($sql);
-        $stmt->execute([':id_type' => $idType]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private static function getDistributedTotalsByCityForType(int $idType): array
-    {
-        $sql = "
-            SELECT dist.id_ville, COALESCE(SUM(dist.quantite_attribuee), 0) AS quantite_attribuee
-            FROM distribution dist
-            JOIN don d ON d.id_don = dist.id_don
-            WHERE d.id_type = :id_type
-            GROUP BY dist.id_ville
-        ";
-
-        $stmt = self::db()->prepare($sql);
-        $stmt->execute([':id_type' => $idType]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $map = [];
-        foreach ($rows as $row) {
-            $map[(int) $row['id_ville']] = (float) $row['quantite_attribuee'];
-        }
-
-        return $map;
-    }
-
-    private static function getNeedTotalsByPairs(array $pairs): array
-    {
-        $params = [];
-        $where = self::buildPairWhere($pairs, 'b.id_ville', 'b.id_type', $params, 'n');
-
-        $sql = "
-            SELECT b.id_ville, b.id_type, SUM(b.quantite) AS quantite_besoin
-            FROM besoin b
-            WHERE {$where}
-            GROUP BY b.id_ville, b.id_type
-        ";
-
-        $stmt = self::db()->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private static function getDistributionTotalsByPairs(array $pairs): array
-    {
-        $params = [];
-        $where = self::buildPairWhere($pairs, 'dist.id_ville', 'd.id_type', $params, 'd');
-
-        $sql = "
-            SELECT dist.id_ville, d.id_type, SUM(dist.quantite_attribuee) AS quantite_attribuee
-            FROM distribution dist
-            JOIN don d ON d.id_don = dist.id_don
-            WHERE {$where}
-            GROUP BY dist.id_ville, d.id_type
-        ";
-
-        $stmt = self::db()->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private static function buildPairWhere(array $pairs, string $villeCol, string $typeCol, array &$params, string $prefix): string
-    {
-        $parts = [];
-        foreach (array_values($pairs) as $index => $pair) {
-            $villeKey = ':' . $prefix . '_v_' . $index;
-            $typeKey = ':' . $prefix . '_t_' . $index;
-            $params[$villeKey] = (int) $pair['id_ville'];
-            $params[$typeKey] = (int) $pair['id_type'];
-            $parts[] = "({$villeCol} = {$villeKey} AND {$typeCol} = {$typeKey})";
-        }
-
-        return implode(' OR ', $parts);
     }
 }
+?>

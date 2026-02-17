@@ -1,18 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
-require_once __DIR__ . '/../models/RegionsModel.php';
-require_once __DIR__ . '/../models/VillesModel.php';
-require_once __DIR__ . '/../models/BesoinsModel.php';
-require_once __DIR__ . '/../models/DonsModel.php';
-require_once __DIR__ . '/../models/AchatsModel.php';
-
-require_once __DIR__ . '/../controllers/RegionsController.php';
-require_once __DIR__ . '/../controllers/VillesController.php';
-require_once __DIR__ . '/../controllers/BesoinsController.php';
-require_once __DIR__ . '/../controllers/DonsController.php';
-require_once __DIR__ . '/../controllers/AchatsController.php';
+use app\controllers\AchatsController;
+use app\controllers\BesoinsController;
+use app\controllers\DonsController;
+use app\controllers\RegionsController;
+use app\controllers\VillesController;
 
 $router->get('/regions', [new RegionsController(), 'index']);
 $router->get('/villes', [new VillesController(), 'index']);
@@ -20,26 +12,26 @@ $router->get('/besoins', [new BesoinsController(), 'index']);
 $router->get('/dons', [new DonsController(), 'index']);
 $router->get('/achats', [new AchatsController(), 'index']);
 
-$router->get('/api/regions', [new RegionsController(), 'apiList']);
-$router->post('/api/regions', [new RegionsController(), 'apiCreate']);
-$router->put('/api/regions/@id:[0-9]+', [new RegionsController(), 'apiUpdate']);
-$router->delete('/api/regions/@id:[0-9]+', [new RegionsController(), 'apiDelete']);
+$router->get('/api/regions', [new RegionsController(), 'listItems']);
+$router->post('/api/regions', [new RegionsController(), 'create']);
+$router->put('/api/regions/@id:[0-9]+', [new RegionsController(), 'update']);
+$router->delete('/api/regions/@id:[0-9]+', [new RegionsController(), 'delete']);
 
-$router->get('/api/villes', [new VillesController(), 'apiList']);
-$router->post('/api/villes', [new VillesController(), 'apiCreate']);
-$router->put('/api/villes/@id:[0-9]+', [new VillesController(), 'apiUpdate']);
-$router->delete('/api/villes/@id:[0-9]+', [new VillesController(), 'apiDelete']);
+$router->get('/api/villes', [new VillesController(), 'listItems']);
+$router->post('/api/villes', [new VillesController(), 'create']);
+$router->put('/api/villes/@id:[0-9]+', [new VillesController(), 'update']);
+$router->delete('/api/villes/@id:[0-9]+', [new VillesController(), 'delete']);
 
-$router->get('/api/besoins', [new BesoinsController(), 'apiList']);
-$router->post('/api/besoins', [new BesoinsController(), 'apiCreate']);
-$router->put('/api/besoins/@id:[0-9]+', [new BesoinsController(), 'apiUpdate']);
-$router->delete('/api/besoins/@id:[0-9]+', [new BesoinsController(), 'apiDelete']);
+$router->get('/api/besoins', [new BesoinsController(), 'listItems']);
+$router->post('/api/besoins', [new BesoinsController(), 'create']);
+$router->put('/api/besoins/@id:[0-9]+', [new BesoinsController(), 'update']);
+$router->delete('/api/besoins/@id:[0-9]+', [new BesoinsController(), 'delete']);
 
-$router->get('/api/dons', [new DonsController(), 'apiList']);
-$router->post('/api/dons', [new DonsController(), 'apiCreate']);
-$router->put('/api/dons/@id:[0-9]+', [new DonsController(), 'apiUpdate']);
-$router->delete('/api/dons/@id:[0-9]+', [new DonsController(), 'apiDelete']);
+$router->get('/api/dons', [new DonsController(), 'listItems']);
+$router->post('/api/dons', [new DonsController(), 'create']);
+$router->put('/api/dons/@id:[0-9]+', [new DonsController(), 'update']);
+$router->delete('/api/dons/@id:[0-9]+', [new DonsController(), 'delete']);
 
-$router->get('/api/achats', [new AchatsController(), 'apiList']);
-$router->post('/api/achats', [new AchatsController(), 'apiCreate']);
-$router->put('/api/achats/configuration/frais', [new AchatsController(), 'apiUpdateFeeRate']);
+$router->get('/api/achats', [new AchatsController(), 'listItems']);
+$router->post('/api/achats', [new AchatsController(), 'create']);
+$router->put('/api/achats/configuration/frais', [new AchatsController(), 'updateFeeRate']);

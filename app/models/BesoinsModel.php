@@ -1,20 +1,15 @@
 <?php
+namespace app\models;
 
-declare(strict_types=1);
+use Flight;
+use PDO;
 
 class BesoinsModel
 {
-    private \PDO $db;
-
-    public function __construct(\PDO $db)
+    public function getAll($villeId = null, $typeId = null)
     {
-        $this->db = $db;
-    }
-
-    public function list(?int $villeId = null, ?int $typeId = null): array
-    {
-        $sql = "SELECT b.id_besoin AS id, b.id_ville AS ville_id, v.nom AS ville, b.id_type AS type_id,
-                       t.libelle AS type, b.nom_produit AS description, b.quantite, b.prix_unitaire
+        $sql = "SELECT b.id_besoin AS id, b.id_ville, v.nom AS ville, b.id_type,
+                       t.libelle AS type, t.categorie, b.nom_produit, b.quantite, b.prix_unitaire, b.date_saisie
                 FROM besoin b
                 LEFT JOIN ville v ON v.id_ville = b.id_ville
                 LEFT JOIN type_besoin t ON t.id_type = b.id_type
@@ -22,67 +17,65 @@ class BesoinsModel
         $params = [];
 
         if ($villeId !== null) {
-            $sql .= ' AND b.id_ville = :ville_id';
-            $params[':ville_id'] = $villeId;
+            $sql .= " AND b.id_ville = ?";
+            $params[] = $villeId;
         }
 
         if ($typeId !== null) {
-            $sql .= ' AND b.id_type = :type_id';
-            $params[':type_id'] = $typeId;
+            $sql .= " AND b.id_type = ?";
+            $params[] = $typeId;
         }
 
-        $sql .= ' ORDER BY b.date_saisie DESC, b.id_besoin DESC';
+        $sql .= " ORDER BY b.date_saisie DESC, b.id_besoin DESC";
 
-        $stmt = $this->db->prepare($sql);
+        $stmt = Flight::db()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function villes(): array
+    public function getById($id)
     {
-        $stmt = $this->db->query('SELECT id_ville AS id, nom FROM ville ORDER BY nom ASC');
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $sql = "SELECT * FROM besoin WHERE id_besoin = ?";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function types(): array
+    public function getVilles()
     {
-        $stmt = $this->db->query('SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC');
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $sql = "SELECT id_ville AS id, nom FROM ville ORDER BY nom ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create(int $villeId, int $typeId, string $description, float $quantite, float $prixUnitaire): int
+    public function getTypes()
     {
-        $stmt = $this->db->prepare(
-            'INSERT INTO besoin (id_ville, id_type, nom_produit, quantite, prix_unitaire) VALUES (:ville_id, :type_id, :description, :quantite, :prix_unitaire)'
-        );
-        $stmt->execute([
-            ':ville_id' => $villeId,
-            ':type_id' => $typeId,
-            ':description' => $description,
-            ':quantite' => $quantite,
-            ':prix_unitaire' => $prixUnitaire,
-        ]);
-        return (int) $this->db->lastInsertId();
+        $sql = "SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function update(int $id, int $villeId, int $typeId, string $description, float $quantite, float $prixUnitaire): bool
+    public function create($villeId, $typeId, $nomProduit, $quantite, $prixUnitaire)
     {
-        $stmt = $this->db->prepare(
-            'UPDATE besoin SET id_ville = :ville_id, id_type = :type_id, nom_produit = :description, quantite = :quantite, prix_unitaire = :prix_unitaire WHERE id_besoin = :id'
-        );
-        return $stmt->execute([
-            ':id' => $id,
-            ':ville_id' => $villeId,
-            ':type_id' => $typeId,
-            ':description' => $description,
-            ':quantite' => $quantite,
-            ':prix_unitaire' => $prixUnitaire,
-        ]);
+        $sql = "INSERT INTO besoin (id_ville, id_type, nom_produit, quantite, prix_unitaire) VALUES (?, ?, ?, ?, ?)";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$villeId, $typeId, $nomProduit, $quantite, $prixUnitaire]);
     }
 
-    public function delete(int $id): bool
+    public function update($id, $villeId, $typeId, $nomProduit, $quantite, $prixUnitaire)
     {
-        $stmt = $this->db->prepare('DELETE FROM besoin WHERE id_besoin = :id');
-        return $stmt->execute([':id' => $id]);
+        $sql = "UPDATE besoin SET id_ville = ?, id_type = ?, nom_produit = ?, quantite = ?, prix_unitaire = ? WHERE id_besoin = ?";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$villeId, $typeId, $nomProduit, $quantite, $prixUnitaire, $id]);
+    }
+
+    public function delete($id)
+    {
+        $sql = "DELETE FROM besoin WHERE id_besoin = ?";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$id]);
     }
 }
+?>

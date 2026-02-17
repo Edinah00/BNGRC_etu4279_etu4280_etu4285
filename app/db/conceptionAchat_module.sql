@@ -1,6 +1,4 @@
--- ========================================
--- MODULE ACHATS VIA DONS EN ARGENT
--- ========================================
+
 
 ALTER TABLE type_besoin
 ADD COLUMN IF NOT EXISTS categorie ENUM('nature', 'matériaux', 'argent') NOT NULL DEFAULT 'nature' AFTER libelle;

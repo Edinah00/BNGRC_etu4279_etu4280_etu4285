@@ -1,52 +1,57 @@
 <?php
 
-declare(strict_types=1);
+namespace app\controllers;
 
-class RegionsController
-{
-    public function index(): void
-    {
+use app\models\RegionsModel;
+use Flight;
+
+class RegionsController{
+    public function index(){
         Flight::render('regions');
     }
 
-    public function apiList(): void
-    {
-        $model = new RegionsModel(Flight::db());
-        Flight::json(['success' => true, 'data' => $model->list()]);
+    public function listItems(){
+        $model = new RegionsModel();
+        Flight::json(['success' => true, 'data' => $model->getAll()]);
     }
 
-    public function apiCreate(): void
-    {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    public function create(){
+        $payload = $this->payload();
         $nom = trim((string) ($payload['nom'] ?? ''));
         if ($nom === '') {
             Flight::json(['success' => false, 'message' => 'Nom requis'], 422);
             return;
         }
 
-        $model = new RegionsModel(Flight::db());
-        $id = $model->create($nom);
-        Flight::json(['success' => true, 'id' => $id]);
+        $model = new RegionsModel();
+        $model->create($nom);
+        Flight::json(['success' => true]);
     }
 
-    public function apiUpdate(int $id): void
-    {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    public function update(int $id){
+        $payload = $this->payload();
         $nom = trim((string) ($payload['nom'] ?? ''));
         if ($nom === '') {
             Flight::json(['success' => false, 'message' => 'Nom requis'], 422);
             return;
         }
 
-        $model = new RegionsModel(Flight::db());
+        $model = new RegionsModel();
         $model->update($id, $nom);
         Flight::json(['success' => true]);
     }
 
-    public function apiDelete(int $id): void
-    {
-        $model = new RegionsModel(Flight::db());
+    public function delete(int $id){
+        $model = new RegionsModel();
         $model->delete($id);
         Flight::json(['success' => true]);
+    }
+
+    private function payload(){
+        $requestData = Flight::request()->data->getData();
+        if (is_array($requestData) && !empty($requestData)) {
+            return $requestData;
+        }
+        return $_POST;
     }
 }

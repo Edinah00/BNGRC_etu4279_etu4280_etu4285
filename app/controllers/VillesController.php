@@ -1,29 +1,29 @@
 <?php
 
-declare(strict_types=1);
+namespace app\controllers;
+
+use app\models\VillesModel;
+use Flight;
 
 class VillesController
 {
-    public function index(): void
-    {
+    public function index(){
         Flight::render('villes');
     }
 
-    public function apiList(): void
-    {
-        $model = new VillesModel(Flight::db());
+    public function listItems(){
+        $model = new VillesModel();
         Flight::json([
             'success' => true,
             'data' => [
-                'villes' => $model->list(),
-                'regions' => $model->regions(),
+                'villes' => $model->getAll(),
+                'regions' => $model->getRegions(),
             ],
         ]);
     }
 
-    public function apiCreate(): void
-    {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    public function create(){
+        $payload = $this->payload();
         $nom = trim((string) ($payload['nom'] ?? ''));
         $regionId = (int) ($payload['region_id'] ?? 0);
         if ($nom === '' || $regionId <= 0) {
@@ -31,14 +31,13 @@ class VillesController
             return;
         }
 
-        $model = new VillesModel(Flight::db());
-        $id = $model->create($nom, $regionId);
-        Flight::json(['success' => true, 'id' => $id]);
+        $model = new VillesModel();
+        $model->create($nom, $regionId);
+        Flight::json(['success' => true]);
     }
 
-    public function apiUpdate(int $id): void
-    {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    public function update(int $id){
+        $payload = $this->payload();
         $nom = trim((string) ($payload['nom'] ?? ''));
         $regionId = (int) ($payload['region_id'] ?? 0);
         if ($nom === '' || $regionId <= 0) {
@@ -46,15 +45,22 @@ class VillesController
             return;
         }
 
-        $model = new VillesModel(Flight::db());
+        $model = new VillesModel();
         $model->update($id, $nom, $regionId);
         Flight::json(['success' => true]);
     }
 
-    public function apiDelete(int $id): void
-    {
-        $model = new VillesModel(Flight::db());
+    public function delete(int $id){
+        $model = new VillesModel();
         $model->delete($id);
         Flight::json(['success' => true]);
+    }
+
+    private function payload(){
+        $requestData = Flight::request()->data->getData();
+        if (is_array($requestData) && !empty($requestData)) {
+            return $requestData;
+        }
+        return $_POST;
     }
 }

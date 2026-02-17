@@ -1,6 +1,9 @@
 <?php
 
-declare(strict_types=1);
+namespace app\controllers;
+
+use app\models\BesoinsModel;
+use Flight;
 
 class BesoinsController
 {
@@ -9,25 +12,25 @@ class BesoinsController
         Flight::render('besoins');
     }
 
-    public function apiList(): void
+    public function listItems(): void
     {
-        $model = new BesoinsModel(Flight::db());
+        $model = new BesoinsModel();
         $villeId = isset($_GET['ville_id']) ? (int) $_GET['ville_id'] : null;
         $typeId = isset($_GET['type_id']) ? (int) $_GET['type_id'] : null;
 
         Flight::json([
             'success' => true,
             'data' => [
-                'besoins' => $model->list($villeId ?: null, $typeId ?: null),
-                'villes' => $model->villes(),
-                'types' => $model->types(),
+                'besoins' => $model->getAll($villeId ?: null, $typeId ?: null),
+                'villes' => $model->getVilles(),
+                'types' => $model->getTypes(),
             ],
         ]);
     }
 
-    public function apiCreate(): void
+    public function create(): void
     {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+        $payload = $this->payload();
         $villeId = (int) ($payload['ville_id'] ?? 0);
         $typeId = (int) ($payload['type_id'] ?? 0);
         $description = trim((string) ($payload['description'] ?? ''));
@@ -39,14 +42,14 @@ class BesoinsController
             return;
         }
 
-        $model = new BesoinsModel(Flight::db());
-        $id = $model->create($villeId, $typeId, $description, $quantite, $prixUnitaire);
-        Flight::json(['success' => true, 'id' => $id]);
+        $model = new BesoinsModel();
+        $model->create($villeId, $typeId, $description, $quantite, $prixUnitaire);
+        Flight::json(['success' => true]);
     }
 
-    public function apiUpdate(int $id): void
+    public function update(int $id): void
     {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+        $payload = $this->payload();
         $villeId = (int) ($payload['ville_id'] ?? 0);
         $typeId = (int) ($payload['type_id'] ?? 0);
         $description = trim((string) ($payload['description'] ?? ''));
@@ -58,15 +61,24 @@ class BesoinsController
             return;
         }
 
-        $model = new BesoinsModel(Flight::db());
+        $model = new BesoinsModel();
         $model->update($id, $villeId, $typeId, $description, $quantite, $prixUnitaire);
         Flight::json(['success' => true]);
     }
 
-    public function apiDelete(int $id): void
+    public function delete(int $id): void
     {
-        $model = new BesoinsModel(Flight::db());
+        $model = new BesoinsModel();
         $model->delete($id);
         Flight::json(['success' => true]);
+    }
+
+    private function payload(): array
+    {
+        $requestData = Flight::request()->data->getData();
+        if (is_array($requestData) && !empty($requestData)) {
+            return $requestData;
+        }
+        return $_POST;
     }
 }

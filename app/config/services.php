@@ -90,7 +90,18 @@ if ($driver === 'pgsql') {
 } elseif ($driver === 'sqlite') {
 	$dsn = 'sqlite:' . $config['database']['file_path'];
 } else {
-	$dsn = 'mysql:host=' . $config['database']['host'] . ';dbname=' . $config['database']['dbname'] . ';charset=utf8mb4';
+	$dsnParts = ['mysql:'];
+	$unixSocket = $config['database']['unix_socket'] ?? null;
+	if (!empty($unixSocket)) {
+		$dsnParts[] = 'unix_socket=' . $unixSocket . ';';
+	} else {
+		$dsnParts[] = 'host=' . ($config['database']['host'] ?? '127.0.0.1') . ';';
+		if (!empty($config['database']['port'])) {
+			$dsnParts[] = 'port=' . (int) $config['database']['port'] . ';';
+		}
+	}
+	$dsnParts[] = 'dbname=' . $config['database']['dbname'] . ';charset=utf8mb4';
+	$dsn = implode('', $dsnParts);
 }
 
 // Register Flight::db() service
@@ -114,6 +125,22 @@ $app->register('db', $pdoClass, [ $dsn, $config['database']['user'] ?? null, $co
  **********************************************/
 // Démarrer la session PHP native si pas déjà démarrée
 if (session_status() === PHP_SESSION_NONE) {
+    $sessionSavePath = ini_get('session.save_path');
+    $isInvalidSavePath = !is_string($sessionSavePath)
+        || trim($sessionSavePath) === ''
+        || !is_dir($sessionSavePath)
+        || !is_writable($sessionSavePath);
+
+    if ($isInvalidSavePath) {
+        $fallbackPath = __DIR__ . $ds . '..' . $ds . 'tmp' . $ds . 'sessions';
+        if (!is_dir($fallbackPath)) {
+            @mkdir($fallbackPath, 0775, true);
+        }
+        if (is_dir($fallbackPath) && is_writable($fallbackPath)) {
+            session_save_path($fallbackPath);
+        }
+    }
+
     session_start();
 }
 

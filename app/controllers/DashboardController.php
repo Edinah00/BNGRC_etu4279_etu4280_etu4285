@@ -1,6 +1,10 @@
 <?php
 
-declare(strict_types=1);
+namespace app\controllers;
+
+use app\models\DashboardModel;
+use Flight;
+use Throwable;
 
 class DashboardController
 {
@@ -9,10 +13,10 @@ class DashboardController
         Flight::render('dashboard');
     }
 
-    public function apiData(): void
+    public function data(): void
     {
         try {
-            $dashboardModel = new DashboardModel(Flight::db());
+            $dashboardModel = new DashboardModel();
             $data = $dashboardModel->getDashboardData();
 
             Flight::json([

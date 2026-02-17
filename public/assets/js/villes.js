@@ -1,38 +1,199 @@
-const state = { villes: [], regions: [], editing: null };
-const elements = {
-  addBtn: document.getElementById('addBtn'), modalOverlay: document.getElementById('modalOverlay'), modalClose: document.getElementById('modalClose'), cancelBtn: document.getElementById('cancelBtn'), saveBtn: document.getElementById('saveBtn'), modalTitle: document.getElementById('modalTitle'), tableBody: document.getElementById('tableBody'), inputNom: document.getElementById('inputNom'), inputRegion: document.getElementById('inputRegion')
+var state = { villes: [], regions: [], editing: null };
+var elements = {
+  addBtn: document.getElementById('addBtn'),
+  modalOverlay: document.getElementById('modalOverlay'),
+  modalClose: document.getElementById('modalClose'),
+  cancelBtn: document.getElementById('cancelBtn'),
+  saveBtn: document.getElementById('saveBtn'),
+  modalTitle: document.getElementById('modalTitle'),
+  tableBody: document.getElementById('tableBody'),
+  inputNom: document.getElementById('inputNom'),
+  inputRegion: document.getElementById('inputRegion')
 };
 
-function escapeHtml(v){ return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-async function api(url, options={}){ const res=await fetch(url,{headers:{'Content-Type':'application/json',Accept:'application/json'},...options}); const payload=await res.json(); if(!res.ok||payload.success===false) throw new Error(payload.message||`HTTP ${res.status}`); return payload; }
-function openModal(){ elements.modalOverlay.classList.add('active'); }
-function closeModal(){ elements.modalOverlay.classList.remove('active'); state.editing=null; elements.modalTitle.textContent='Ajouter une ville'; elements.inputNom.value=''; elements.inputRegion.value=''; }
+function openModal(){
+    elements.modalOverlay.classList.add('active');
+}
+
+function closeModal(){
+    elements.modalOverlay.classList.remove('active');
+    state.editing = null;
+    elements.modalTitle.textContent = 'Ajouter une ville';
+    elements.inputNom.value = '';
+    elements.inputRegion.value = '';
+}
 
 function renderRegionsSelect(){
-  elements.inputRegion.innerHTML = '<option value="">Selectionner une region</option>' + state.regions.map((r)=>`<option value="${r.id}">${escapeHtml(r.nom)}</option>`).join('');
+    elements.inputRegion.textContent = '';
+    
+    var defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'Selectionner une region';
+    elements.inputRegion.appendChild(defaultOpt);
+    
+    for (var i = 0; i < state.regions.length; i++) {
+        var r = state.regions[i];
+        var opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.nom;
+        elements.inputRegion.appendChild(opt);
+    }
 }
 
 function renderTable(){
-  if(!state.villes.length){ elements.tableBody.innerHTML='<tr><td colspan="3" class="empty-row">Aucune ville</td></tr>'; return; }
-  elements.tableBody.innerHTML = state.villes.map((v)=>`<tr><td style="font-weight:600;">${escapeHtml(v.nom)}</td><td>${escapeHtml(v.region||'—')}</td><td><div class="action-buttons"><button class="action-btn edit-btn" data-id="${v.id}">Edit</button><button class="action-btn delete-btn delete" data-id="${v.id}">Del</button></div></td></tr>`).join('');
-  document.querySelectorAll('.edit-btn').forEach((btn)=>btn.addEventListener('click',()=>{ const ville=state.villes.find((v)=>String(v.id)===btn.dataset.id); if(!ville) return; state.editing=ville; elements.modalTitle.textContent='Modifier une ville'; elements.inputNom.value=ville.nom; elements.inputRegion.value=ville.region_id; openModal(); }));
-  document.querySelectorAll('.delete-btn').forEach((btn)=>btn.addEventListener('click',async()=>{ if(!confirm('Supprimer cette ville ?')) return; try{ await api(`/api/villes/${btn.dataset.id}`,{method:'DELETE'}); await loadData(); }catch(e){ alert(e.message); }}));
+    elements.tableBody.textContent = '';
+    
+    if(state.villes.length === 0){
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 3;
+        td.className = 'empty-row';
+        td.textContent = 'Aucune ville';
+        tr.appendChild(td);
+        elements.tableBody.appendChild(tr);
+        return;
+    }
+    
+    for (var i = 0; i < state.villes.length; i++) {
+        var v = state.villes[i];
+        var tr = document.createElement('tr');
+        
+        var tdNom = document.createElement('td');
+        tdNom.style.fontWeight = '600';
+        tdNom.textContent = v.nom;
+        
+        var tdRegion = document.createElement('td');
+        tdRegion.textContent = v.region || '—';
+        
+        var tdActions = document.createElement('td');
+        var divActions = document.createElement('div');
+        divActions.className = 'action-buttons';
+        
+        var btnEdit = document.createElement('button');
+        btnEdit.className = 'action-btn edit-btn';
+        btnEdit.dataset.id = v.id;
+        btnEdit.textContent = 'Edit';
+        btnEdit.addEventListener('click', function() {
+            var villeId = this.dataset.id;
+            var ville = null;
+            for (var j = 0; j < state.villes.length; j++) {
+                if (String(state.villes[j].id) === villeId) {
+                    ville = state.villes[j];
+                    break;
+                }
+            }
+            if (!ville) return;
+            state.editing = ville;
+            elements.modalTitle.textContent = 'Modifier une ville';
+            elements.inputNom.value = ville.nom;
+            elements.inputRegion.value = ville.region_id;
+            openModal();
+        });
+        
+        var btnDelete = document.createElement('button');
+        btnDelete.className = 'action-btn delete-btn delete';
+        btnDelete.dataset.id = v.id;
+        btnDelete.textContent = 'Del';
+        btnDelete.addEventListener('click', function() {
+            if (!confirm('Supprimer cette ville ?')) return;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', '/api/villes/' + this.dataset.id, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    loadData();
+                } else {
+                    alert('Erreur lors de la suppression.');
+                }
+            };
+            
+            xhr.send();
+        });
+        
+        divActions.appendChild(btnEdit);
+        divActions.appendChild(btnDelete);
+        tdActions.appendChild(divActions);
+        
+        tr.appendChild(tdNom);
+        tr.appendChild(tdRegion);
+        tr.appendChild(tdActions);
+        
+        elements.tableBody.appendChild(tr);
+    }
 }
 
-async function loadData(){ const payload=await api('/api/villes'); state.villes=payload.data?.villes||[]; state.regions=payload.data?.regions||[]; renderRegionsSelect(); renderTable(); }
-async function saveVille(){ const nom=elements.inputNom.value.trim(); const region_id=Number(elements.inputRegion.value||0); if(!nom||!region_id){ alert('Nom et region requis'); return; } try{ if(state.editing){ await api(`/api/villes/${state.editing.id}`,{method:'PUT',body:JSON.stringify({nom,region_id})}); } else { await api('/api/villes',{method:'POST',body:JSON.stringify({nom,region_id})}); } closeModal(); await loadData(); }catch(e){ alert(e.message); } }
+function loadData(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/villes', true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            if (response.success && response.data) {
+                state.villes = response.data.villes || [];
+                state.regions = response.data.regions || [];
+                renderRegionsSelect();
+                renderTable();
+            }
+        }
+    };
+    
+    xhr.send();
+}
+
+function saveVille(){
+    var nom = elements.inputNom.value.trim();
+    var region_id = Number(elements.inputRegion.value || 0);
+    
+    if (!nom || !region_id) {
+        alert('Nom et region requis');
+        return;
+    }
+    
+    var xhr = new XMLHttpRequest();
+    var method = state.editing ? 'PUT' : 'POST';
+    var url = state.editing ? '/api/villes/' + state.editing.id : '/api/villes';
+    
+    xhr.open(method, url, true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            closeModal();
+            loadData();
+        } else {
+            alert('Erreur lors de l enregistrement.');
+        }
+    };
+    
+    xhr.send(JSON.stringify({nom: nom, region_id: region_id}));
+}
 
 function init(){
-  elements.addBtn?.addEventListener('click',openModal);
-  elements.modalClose?.addEventListener('click',closeModal);
-  elements.cancelBtn?.addEventListener('click',closeModal);
-  elements.saveBtn?.addEventListener('click',saveVille);
-  elements.modalOverlay?.addEventListener('click',(e)=>{ if(e.target===elements.modalOverlay) closeModal();});
-  const action = new URLSearchParams(window.location.search).get('action');
+  if (elements.addBtn) elements.addBtn.addEventListener('click',openModal);
+  if (elements.modalClose) elements.modalClose.addEventListener('click',closeModal);
+  if (elements.cancelBtn) elements.cancelBtn.addEventListener('click',closeModal);
+  if (elements.saveBtn) elements.saveBtn.addEventListener('click',saveVille);
+  if (elements.modalOverlay) {
+      elements.modalOverlay.addEventListener('click', function(e) {
+          if(e.target === elements.modalOverlay) closeModal();
+      });
+  }
+  
+  var action = new URLSearchParams(window.location.search).get('action');
   if (action === 'create') {
     openModal();
   }
-  loadData().catch((e)=>{ elements.tableBody.innerHTML=`<tr><td colspan="3">${escapeHtml(e.message)}</td></tr>`; });
+  
+  loadData();
 }
 
-document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

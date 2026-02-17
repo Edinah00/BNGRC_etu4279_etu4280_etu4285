@@ -1,11 +1,11 @@
-const state = {
+var state = {
     draftRows: [],
     eligibleCitiesByType: {},
     needRemainings: {},
-    summary: null,
+    summary: null
 };
 
-const elements = {
+var elements = {
     simulateBtn: document.getElementById('simulateBtn'),
     validateBtn: document.getElementById('validateBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
@@ -17,183 +17,235 @@ const elements = {
     summaryBlock: document.getElementById('summaryBlock'),
     toast: document.getElementById('toast'),
     toastTitle: document.getElementById('toastTitle'),
-    toastDescription: document.getElementById('toastDescription'),
+    toastDescription: document.getElementById('toastDescription')
 };
+
+function setValidateVisible(visible) {
+    if (!elements.validateBtn) return;
+    elements.validateBtn.style.display = visible ? 'inline-flex' : 'none';
+}
 
 function showEmptyState() {
     elements.emptyState.style.display = 'block';
     elements.noResultsState.style.display = 'none';
     elements.simulationResults.style.display = 'none';
+    setValidateVisible(false);
 }
 
 function showNoResultsState() {
     elements.emptyState.style.display = 'none';
     elements.noResultsState.style.display = 'block';
     elements.simulationResults.style.display = 'none';
+    setValidateVisible(false);
 }
 
 function showSimulationResults() {
     elements.emptyState.style.display = 'none';
     elements.noResultsState.style.display = 'none';
     elements.simulationResults.style.display = 'block';
+    setValidateVisible(true);
 }
 
-function showToast(title, description, isError = false) {
+function showToast(title, description, isError) {
     elements.toastTitle.textContent = title;
     elements.toastDescription.textContent = description;
-    elements.toast.style.background = isError
-        ? 'linear-gradient(135deg, #c0392b 0%, #922b21 100%)'
-        : 'linear-gradient(135deg, #27AE60 0%, #229954 100%)';
+    if (isError) {
+        elements.toast.style.background = 'linear-gradient(135deg, #c0392b 0%, #922b21 100%)';
+    } else {
+        elements.toast.style.background = 'linear-gradient(135deg, #27AE60 0%, #229954 100%)';
+    }
     elements.toast.classList.add('show');
-
-    setTimeout(() => {
+    setTimeout(function() {
         elements.toast.classList.remove('show');
     }, 3500);
 }
 
-async function requestJson(url, options = {}) {
-    const response = await fetch(url, {
-        headers: {
-            'Accept': 'application/json',
-            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        },
-        ...options,
-    });
-
-    const raw = await response.text();
-    let payload = null;
-    try {
-        payload = raw ? JSON.parse(raw) : null;
-    } catch (error) {
-        throw new Error(`Réponse non JSON (${response.status}) sur ${url}`);
-    }
-
-    if (!payload) {
-        throw new Error(`Réponse vide (${response.status}) sur ${url}`);
-    }
-
-    if (!response.ok || !payload.success) {
-        throw new Error(payload.message || `Erreur HTTP ${response.status}`);
-    }
-
-    return payload;
-}
-
 function apiUrl(path) {
-    const cleanPath = String(path).replace(/^\/+/, '');
-    const base = window.location.pathname.replace(/\/dispatch\/?$/, '/');
-    return `${base}${cleanPath}`;
-}
-
-function recalculateNeedRemainings() {
-    const base = { ...state.needRemainings };
-    for (const row of state.draftRows) {
-        const key = `${row.id_ville}-${row.id_type}`;
-        const current = base[key] ?? 0;
-        base[key] = current - row.quantite_proposee;
-    }
-    return base;
+    var cleanPath = String(path).replace(/^\/+/, '');
+    var base = window.location.pathname.replace(/\/dispatch\/?$/, '/');
+    return base + cleanPath;
 }
 
 function getUsedDonQuantities() {
-    const map = {};
-    for (const row of state.draftRows) {
-        map[row.id_don] = (map[row.id_don] || 0) + row.quantite_proposee;
+    var map = {};
+    for (var i = 0; i < state.draftRows.length; i++) {
+        var row = state.draftRows[i];
+        if (map[row.id_don]) {
+            map[row.id_don] = map[row.id_don] + row.quantite_proposee;
+        } else {
+            map[row.id_don] = row.quantite_proposee;
+        }
     }
     return map;
 }
 
 function getDonLimitById(idDon) {
-    if (!state.summary || !Array.isArray(state.summary.dons)) {
+    if (!state.summary || !state.summary.dons) {
         return 0;
     }
-    const found = state.summary.dons.find((d) => Number(d.id_don) === Number(idDon));
-    return found ? Number(found.quantite_totale) : 0;
-}
-
-function getCityTypeRemainingForRow(targetIndex, cityId, typeId) {
-    const key = `${cityId}-${typeId}`;
-    const baseRemaining = Number(state.needRemainings[key] ?? 0);
-
-    let usedByOtherRows = 0;
-    state.draftRows.forEach((row, index) => {
-        if (index === targetIndex) return;
-        if (Number(row.id_ville) === Number(cityId) && Number(row.id_type) === Number(typeId)) {
-            usedByOtherRows += Number(row.quantite_proposee || 0);
+    for (var i = 0; i < state.summary.dons.length; i++) {
+        if (Number(state.summary.dons[i].id_don) === Number(idDon)) {
+            return Number(state.summary.dons[i].quantite_totale);
         }
-    });
-
-    return Math.max(baseRemaining - usedByOtherRows, 0);
+    }
+    return 0;
 }
 
 function renderTable() {
-    elements.resultsTitle.textContent = `Résultats (brouillon) - ${state.draftRows.length} distribution(s)`;
-
-    const rowsHtml = state.draftRows.map((row, index) => {
-        const cities = state.eligibleCitiesByType[row.id_type] || [];
-        const cityOptions = cities.map((city) => {
-            const selected = Number(city.id_ville) === Number(row.id_ville) ? 'selected' : '';
-            const remain = Number(city.besoin_restant).toFixed(2);
-            return `<option value="${city.id_ville}" ${selected}>${city.nom} (${remain})</option>`;
-        }).join('');
-
-        return `
-            <tr data-index="${index}">
-                <td>${row.don_label}</td>
-                <td><span class="badge">${row.type_besoin}</span></td>
-                <td>
-                    <select data-action="city" data-index="${index}" style="min-width:180px;padding:0.4rem;">
-                        ${cityOptions}
-                    </select>
-                </td>
-                <td>
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        max="${row.quantite_max_initiale}"
-                        value="${row.quantite_proposee}"
-                        data-action="quantity"
-                        data-index="${index}"
-                        style="width:120px;padding:0.4rem;"
-                    />
-                    <small style="display:block;opacity:0.7;">max initial: ${Number(row.quantite_max_initiale).toFixed(2)}</small>
-                </td>
-                <td>
-                    <button type="button" data-action="remove" data-index="${index}" class="btn-primary" style="padding:0.4rem 0.7rem;background:#c0392b;">Supprimer</button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    elements.resultsTableBody.innerHTML = rowsHtml;
+    elements.resultsTitle.textContent = 'Résultats (brouillon) - ' + state.draftRows.length + ' distribution(s)';
+    elements.resultsTableBody.textContent = '';
+    
+    for (var i = 0; i < state.draftRows.length; i++) {
+        var row = state.draftRows[i];
+        var tr = document.createElement('tr');
+        tr.dataset.index = i;
+        
+        var tdDon = document.createElement('td');
+        tdDon.textContent = row.don_label;
+        
+        var tdType = document.createElement('td');
+        var badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = row.type_besoin;
+        tdType.appendChild(badge);
+        
+        var tdVille = document.createElement('td');
+        var selectVille = document.createElement('select');
+        selectVille.dataset.action = 'city';
+        selectVille.dataset.index = i;
+        selectVille.style.minWidth = '180px';
+        selectVille.style.padding = '0.4rem';
+        
+        var cities = state.eligibleCitiesByType[row.id_type];
+        if (!cities) cities = [];
+        for (var j = 0; j < cities.length; j++) {
+            var city = cities[j];
+            var option = document.createElement('option');
+            option.value = city.id_ville;
+            option.textContent = city.nom + ' (' + Number(city.besoin_restant).toFixed(2) + ')';
+            if (Number(city.id_ville) === Number(row.id_ville)) {
+                option.selected = true;
+            }
+            selectVille.appendChild(option);
+        }
+        tdVille.appendChild(selectVille);
+        
+        var tdQuantite = document.createElement('td');
+        var inputQte = document.createElement('input');
+        inputQte.type = 'number';
+        inputQte.min = '0';
+        inputQte.step = '0.01';
+        inputQte.max = row.quantite_max_initiale;
+        inputQte.value = row.quantite_proposee;
+        inputQte.dataset.action = 'quantity';
+        inputQte.dataset.index = i;
+        inputQte.style.width = '120px';
+        inputQte.style.padding = '0.4rem';
+        
+        var small = document.createElement('small');
+        small.style.display = 'block';
+        small.style.opacity = '0.7';
+        small.textContent = 'max initial: ' + Number(row.quantite_max_initiale).toFixed(2);
+        
+        tdQuantite.appendChild(inputQte);
+        tdQuantite.appendChild(small);
+        
+        var tdActions = document.createElement('td');
+        var btnRemove = document.createElement('button');
+        btnRemove.type = 'button';
+        btnRemove.dataset.action = 'remove';
+        btnRemove.dataset.index = i;
+        btnRemove.className = 'btn-primary';
+        btnRemove.style.padding = '0.4rem 0.7rem';
+        btnRemove.style.background = '#c0392b';
+        btnRemove.textContent = 'Supprimer';
+        tdActions.appendChild(btnRemove);
+        
+        tr.appendChild(tdDon);
+        tr.appendChild(tdType);
+        tr.appendChild(tdVille);
+        tr.appendChild(tdQuantite);
+        tr.appendChild(tdActions);
+        
+        elements.resultsTableBody.appendChild(tr);
+    }
 }
 
 function renderSummary() {
-    const usedByDon = getUsedDonQuantities();
-    const donRows = (state.summary?.dons || []).map((don) => {
-        const used = Number(usedByDon[don.id_don] || 0);
-        const total = Number(don.quantite_totale);
-        const remain = Math.max(total - used, 0);
-        const pct = total > 0 ? ((used / total) * 100).toFixed(2) : '0.00';
-        return `
-            <div style="border:1px solid #dfe6e9;border-radius:8px;padding:0.75rem;margin-bottom:0.6rem;">
-                <strong>Don #${don.id_don} (${don.type_besoin})</strong><br>
-                Distribué: ${used.toFixed(2)} (${pct}%)<br>
-                Restant: ${remain.toFixed(2)}
-            </div>
-        `;
-    }).join('');
-
-    const totalQuantity = state.draftRows.reduce((sum, row) => sum + Number(row.quantite_proposee), 0);
-    const distinctDon = new Set(state.draftRows.map((row) => row.id_don)).size;
-
-    elements.summaryBlock.innerHTML = `
-        <p>Nombre de distributions : <strong>${state.draftRows.length}</strong></p>
-        <p>Dons utilisés : <strong>${distinctDon}</strong></p>
-        <p>Quantité totale distribuée : <strong>${totalQuantity.toFixed(2)}</strong></p>
-        <div style="margin-top:0.8rem;">${donRows}</div>
-    `;
+    var usedByDon = getUsedDonQuantities();
+    var totalQuantity = 0;
+    for (var i = 0; i < state.draftRows.length; i++) {
+        totalQuantity = totalQuantity + Number(state.draftRows[i].quantite_proposee);
+    }
+    
+    var distinctDonSet = {};
+    for (var i = 0; i < state.draftRows.length; i++) {
+        distinctDonSet[state.draftRows[i].id_don] = true;
+    }
+    var distinctDon = 0;
+    for (var key in distinctDonSet) {
+        distinctDon = distinctDon + 1;
+    }
+    
+    elements.summaryBlock.textContent = '';
+    
+    var pNb = document.createElement('p');
+    pNb.textContent = 'Nombre de distributions : ';
+    var strongNb = document.createElement('strong');
+    strongNb.textContent = state.draftRows.length;
+    pNb.appendChild(strongNb);
+    
+    var pDons = document.createElement('p');
+    pDons.textContent = 'Dons utilisés : ';
+    var strongDons = document.createElement('strong');
+    strongDons.textContent = distinctDon;
+    pDons.appendChild(strongDons);
+    
+    var pQte = document.createElement('p');
+    pQte.textContent = 'Quantité totale distribuée : ';
+    var strongQte = document.createElement('strong');
+    strongQte.textContent = totalQuantity.toFixed(2);
+    pQte.appendChild(strongQte);
+    
+    elements.summaryBlock.appendChild(pNb);
+    elements.summaryBlock.appendChild(pDons);
+    elements.summaryBlock.appendChild(pQte);
+    
+    var donRowsContainer = document.createElement('div');
+    donRowsContainer.style.marginTop = '0.8rem';
+    
+    var dons = state.summary && state.summary.dons ? state.summary.dons : [];
+    for (var i = 0; i < dons.length; i++) {
+        var don = dons[i];
+        var used = Number(usedByDon[don.id_don] || 0);
+        var total = Number(don.quantite_totale);
+        var remain = total - used;
+        if (remain < 0) remain = 0;
+        var pct = total > 0 ? ((used / total) * 100).toFixed(2) : '0.00';
+        
+        var div = document.createElement('div');
+        div.style.border = '1px solid #dfe6e9';
+        div.style.borderRadius = '8px';
+        div.style.padding = '0.75rem';
+        div.style.marginBottom = '0.6rem';
+        
+        var title = document.createElement('strong');
+        title.textContent = 'Don #' + don.id_don + ' (' + don.type_besoin + ')';
+        
+        var distribLine = document.createElement('div');
+        distribLine.textContent = 'Distribué: ' + used.toFixed(2) + ' (' + pct + '%)';
+        
+        var restantLine = document.createElement('div');
+        restantLine.textContent = 'Restant: ' + remain.toFixed(2);
+        
+        div.appendChild(title);
+        div.appendChild(distribLine);
+        div.appendChild(restantLine);
+        
+        donRowsContainer.appendChild(div);
+    }
+    
+    elements.summaryBlock.appendChild(donRowsContainer);
 }
 
 function rerenderDraft() {
@@ -206,107 +258,126 @@ function rerenderDraft() {
     showSimulationResults();
 }
 
-async function handleSimulate() {
-    try {
-        const payload = await requestJson(apiUrl('api/dispatch/simulate'));
-        const data = payload.data;
-
-        state.draftRows = data.distributions || [];
-        state.eligibleCitiesByType = data.eligible_cities_by_type || {};
-        state.needRemainings = data.need_remainings || {};
-        state.summary = data.summary || null;
-
-        if (state.draftRows.length === 0) {
+function handleSimulate() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', apiUrl('api/dispatch/simulate'), true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            if (response.success) {
+                var data = response.data;
+                state.draftRows = data.distributions || [];
+                state.eligibleCitiesByType = data.eligible_cities_by_type || {};
+                state.needRemainings = data.need_remainings || {};
+                state.summary = data.summary || null;
+                
+                if (state.draftRows.length === 0) {
+                    showNoResultsState();
+                } else {
+                    rerenderDraft();
+                }
+            } else {
+                showToast('Erreur', response.message || 'Erreur API', true);
+                showNoResultsState();
+            }
+        } else {
+            showToast('Erreur', 'Erreur HTTP ' + xhr.status, true);
             showNoResultsState();
-            return;
         }
-
-        rerenderDraft();
-    } catch (error) {
-        showToast('Erreur', error.message, true);
+    };
+    
+    xhr.onerror = function() {
+        showToast('Erreur', 'Erreur réseau', true);
         showNoResultsState();
-    }
+    };
+    
+    xhr.send();
 }
 
 function handleQuantityChange(index, value) {
-    const row = state.draftRows[index];
+    var row = state.draftRows[index];
     if (!row) return;
-
-    const parsed = Number(value);
-    if (Number.isNaN(parsed) || parsed < 0) {
+    
+    var parsed = Number(value);
+    if (isNaN(parsed) || parsed < 0) {
         showToast('Validation', 'La quantité doit être >= 0.', true);
         rerenderDraft();
         return;
     }
-
+    
     if (parsed > Number(row.quantite_max_initiale)) {
         showToast('Validation', 'La quantité dépasse la proposition initiale.', true);
         rerenderDraft();
         return;
     }
-
-    const previous = Number(row.quantite_proposee);
+    
+    var previous = Number(row.quantite_proposee);
     row.quantite_proposee = parsed;
-
-    const usedByDon = getUsedDonQuantities();
-    if ((usedByDon[row.id_don] || 0) > getDonLimitById(row.id_don) + 0.00001) {
+    
+    var usedByDon = getUsedDonQuantities();
+    var limit = getDonLimitById(row.id_don);
+    if ((usedByDon[row.id_don] || 0) > limit + 0.00001) {
         row.quantite_proposee = previous;
         showToast('Validation', 'La somme distribuée dépasse la quantité du don.', true);
         rerenderDraft();
         return;
     }
-
-    const needBalance = recalculateNeedRemainings();
-    const needKey = `${row.id_ville}-${row.id_type}`;
-    if ((needBalance[needKey] ?? 0) < -0.00001) {
-        row.quantite_proposee = previous;
-        showToast('Validation', 'La quantité dépasse le besoin restant de la ville.', true);
-        rerenderDraft();
-        return;
-    }
-
+    
     rerenderDraft();
 }
 
 function handleCityChange(index, idVille) {
-    const row = state.draftRows[index];
+    var row = state.draftRows[index];
     if (!row) return;
-
-    const newCity = Number(idVille);
-    row.id_ville = newCity;
-    const maxForSelectedCity = getCityTypeRemainingForRow(index, row.id_ville, row.id_type);
-
-    if (Number(row.quantite_proposee) > maxForSelectedCity) {
-        row.quantite_proposee = Number(maxForSelectedCity.toFixed(2));
-        showToast('Ajustement auto', 'Quantité réduite au besoin restant de la ville sélectionnée.');
-    }
-
+    row.id_ville = Number(idVille);
     rerenderDraft();
 }
 
 function handleRemove(index) {
-    state.draftRows.splice(index, 1);
+    var newRows = [];
+    for (var i = 0; i < state.draftRows.length; i++) {
+        if (i !== index) {
+            newRows.push(state.draftRows[i]);
+        }
+    }
+    state.draftRows = newRows;
     rerenderDraft();
 }
 
-async function handleValidate() {
+function handleValidate() {
     if (state.draftRows.length === 0) {
         showToast('Validation', 'Aucune ligne à valider.', true);
         return;
     }
-
-    try {
-        const payload = await requestJson(apiUrl('api/dispatch/validate'), {
-            method: 'POST',
-            body: JSON.stringify({ distributions: state.draftRows }),
-        });
-
-        showToast('Succès', payload.message || 'Dispatch validé avec succès.');
-        state.draftRows = [];
-        showEmptyState();
-    } catch (error) {
-        showToast('Erreur', error.message, true);
-    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', apiUrl('api/dispatch/validate'), true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            if (response.success) {
+                showToast('Succès', response.message || 'Dispatch validé avec succès.', false);
+                state.draftRows = [];
+                showEmptyState();
+            } else {
+                showToast('Erreur', response.message || 'Erreur API', true);
+            }
+        } else {
+            showToast('Erreur', 'Erreur HTTP ' + xhr.status, true);
+        }
+    };
+    
+    xhr.onerror = function() {
+        showToast('Erreur', 'Erreur réseau', true);
+    };
+    
+    var payload = JSON.stringify({ distributions: state.draftRows });
+    xhr.send(payload);
 }
 
 function handleCancel() {
@@ -314,52 +385,50 @@ function handleCancel() {
     showEmptyState();
 }
 
-function bindEvents() {
-    if (elements.simulateBtn) {
-        elements.simulateBtn.addEventListener('click', handleSimulate);
+function onTableInput(event) {
+    var target = event.target;
+    var action = target.getAttribute('data-action');
+    var index = Number(target.getAttribute('data-index'));
+    if (action === 'quantity') {
+        handleQuantityChange(index, target.value);
     }
+}
 
-    if (elements.validateBtn) {
-        elements.validateBtn.addEventListener('click', handleValidate);
+function onTableChange(event) {
+    var target = event.target;
+    var action = target.getAttribute('data-action');
+    var index = Number(target.getAttribute('data-index'));
+    if (action === 'city') {
+        handleCityChange(index, target.value);
     }
+}
 
-    if (elements.cancelBtn) {
-        elements.cancelBtn.addEventListener('click', handleCancel);
-    }
-
-    if (elements.resultsTableBody) {
-        elements.resultsTableBody.addEventListener('input', (event) => {
-            const target = event.target;
-            const action = target.getAttribute('data-action');
-            const index = Number(target.getAttribute('data-index'));
-            if (action === 'quantity') {
-                handleQuantityChange(index, target.value);
-            }
-        });
-
-        elements.resultsTableBody.addEventListener('change', (event) => {
-            const target = event.target;
-            const action = target.getAttribute('data-action');
-            const index = Number(target.getAttribute('data-index'));
-            if (action === 'city') {
-                handleCityChange(index, target.value);
-            }
-        });
-
-        elements.resultsTableBody.addEventListener('click', (event) => {
-            const target = event.target;
-            const action = target.getAttribute('data-action');
-            const index = Number(target.getAttribute('data-index'));
-            if (action === 'remove') {
-                handleRemove(index);
-            }
-        });
+function onTableClick(event) {
+    var target = event.target;
+    var action = target.getAttribute('data-action');
+    var index = Number(target.getAttribute('data-index'));
+    if (action === 'remove') {
+        handleRemove(index);
     }
 }
 
 function init() {
     showEmptyState();
-    bindEvents();
+    
+    if (elements.simulateBtn) {
+        elements.simulateBtn.addEventListener('click', handleSimulate);
+    }
+    if (elements.validateBtn) {
+        elements.validateBtn.addEventListener('click', handleValidate);
+    }
+    if (elements.cancelBtn) {
+        elements.cancelBtn.addEventListener('click', handleCancel);
+    }
+    if (elements.resultsTableBody) {
+        elements.resultsTableBody.addEventListener('input', onTableInput);
+        elements.resultsTableBody.addEventListener('change', onTableChange);
+        elements.resultsTableBody.addEventListener('click', onTableClick);
+    }
 }
 
 if (document.readyState === 'loading') {

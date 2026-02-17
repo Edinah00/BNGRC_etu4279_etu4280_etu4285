@@ -6,30 +6,34 @@ use flight\net\Router;
 
 $router->group('', function (Router $router) {
     $router->get('/dispatch', function () {
-        DispatchController::index();
+        $controller = new DispatchController();
+        $controller->index();
         exit();
     });
 
-    // Alias de compatibilite (orthographe frequente)
     $router->get('/dispach', function () {
-        DispatchController::index();
-        exit();
-    });
-}, [SecurityHeadersMiddleware::class]);
-
-$router->group('/api/dispatch', function (Router $router) {
-    $router->get('/simulate', function () {
-        DispatchController::simulate();
+        $controller = new DispatchController();
+        $controller->index();
         exit();
     });
 
-    $router->get('/eligible-cities/@idType', function ($idType) {
-        DispatchController::eligibleCities($idType);
-        exit();
-    });
+    $router->group('/api/dispatch', function (Router $router) {
+        $router->get('/simulate', function () {
+            $controller = new DispatchController();
+            $controller->simulate();
+            exit();
+        });
 
-    $router->post('/validate', function () {
-        DispatchController::validateDraft();
-        exit();
+        $router->get('/eligible-cities/@idType', function ($idType) {
+            $controller = new DispatchController();
+            $controller->eligibleCities($idType);
+            exit();
+        });
+
+        $router->post('/validate', function () {
+            $controller = new DispatchController();
+            $controller->validateDraft();
+            exit();
+        });
     });
 }, [SecurityHeadersMiddleware::class]);

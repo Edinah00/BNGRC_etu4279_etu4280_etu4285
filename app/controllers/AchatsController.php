@@ -1,24 +1,24 @@
 <?php
 
-declare(strict_types=1);
+namespace app\controllers;
 
-class AchatsController
-{
-    public function index(): void
-    {
+use app\models\AchatsModel;
+use Flight;
+
+class AchatsController{
+    public function index(){
         Flight::render('achats');
     }
 
-    public function apiList(): void
-    {
+    public function listItems(){
         try {
-            $model = new AchatsModel(Flight::db());
+            $model = new AchatsModel();
 
             $villeId = isset($_GET['ville_id']) ? (int) $_GET['ville_id'] : null;
             $typeId = isset($_GET['type_id']) ? (int) $_GET['type_id'] : null;
             $periode = (string) ($_GET['periode'] ?? 'all');
 
-            $context = $model->listContext(
+            $context = $model->getContext(
                 ($villeId ?? 0) > 0 ? $villeId : null,
                 ($typeId ?? 0) > 0 ? $typeId : null,
                 $periode
@@ -36,30 +36,29 @@ class AchatsController
         }
     }
 
-    public function apiCreate(): void
-    {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    public function create(){
+        $payload = $this->payload();
         $idBesoin = (int) ($payload['id_besoin'] ?? 0);
         $quantite = (float) ($payload['quantite'] ?? 0);
 
         if ($idBesoin <= 0 || $quantite <= 0) {
             Flight::json([
                 'success' => false,
-                'message' => '❌ Champs invalides. Vérifiez le besoin et la quantité.',
+                'message' => ' Champs invalides. Vérifiez le besoin et la quantité.',
             ], 422);
             return;
         }
 
         try {
-            $model = new AchatsModel(Flight::db());
-            $result = $model->createPurchase($idBesoin, $quantite);
+            $model = new AchatsModel();
+            $result = $model->createAchat($idBesoin, $quantite);
 
             Flight::json([
                 'success' => true,
-                'message' => '✅ Achat effectué avec succès.',
+                'message' => ' Achat effectué avec succès.',
                 'data' => $result,
             ]);
-        } catch (\RuntimeException $e) {
+        } catch (\Exception $e) {
             Flight::json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -72,26 +71,25 @@ class AchatsController
         }
     }
 
-    public function apiUpdateFeeRate(): void
-    {
-        $payload = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    public function updateFeeRate(){
+        $payload = $this->payload();
         $rate = (float) ($payload['taux_frais'] ?? -1);
 
         try {
-            $model = new AchatsModel(Flight::db());
+            $model = new AchatsModel();
             $model->updateFeeRate($rate);
 
             Flight::json([
                 'success' => true,
-                'message' => '✅ Taux de frais mis à jour.',
+                'message' => 'Taux de frais mis à jour.',
                 'data' => [
                     'taux_frais' => $model->getFeeRate(),
                 ],
             ]);
-        } catch (\RuntimeException $e) {
+        } catch (\Exception $e) {
             Flight::json([
                 'success' => false,
-                'message' => '❌ ' . $e->getMessage(),
+                'message' => '' . $e->getMessage(),
             ], 422);
         } catch (\Throwable $e) {
             Flight::json([
@@ -99,5 +97,13 @@ class AchatsController
                 'message' => 'Erreur serveur pendant la mise à jour: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function payload(){
+        $requestData = Flight::request()->data->getData();
+        if (is_array($requestData) && !empty($requestData)) {
+            return $requestData;
+        }
+        return $_POST;
     }
 }

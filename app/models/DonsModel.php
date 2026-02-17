@@ -1,65 +1,64 @@
 <?php
+namespace app\models;
 
-declare(strict_types=1);
+use Flight;
+use PDO;
 
 class DonsModel
 {
-    private \PDO $db;
-
-    public function __construct(\PDO $db)
+    public function getAll()
     {
-        $this->db = $db;
+        $sql = "SELECT d.id_don AS id, d.id_type, t.libelle AS type, t.categorie,
+                       d.quantite, d.date_don,
+                       (d.quantite * COALESCE(p.prix_moyen, 0)) AS valeur_estimee
+                FROM don d
+                LEFT JOIN type_besoin t ON t.id_type = d.id_type
+                LEFT JOIN (
+                    SELECT id_type, AVG(prix_unitaire) AS prix_moyen
+                    FROM besoin
+                    GROUP BY id_type
+                ) p ON p.id_type = d.id_type
+                ORDER BY d.date_don DESC, d.id_don DESC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function list(): array
+    public function getById($id)
     {
-        $stmt = $this->db->query(
-            "SELECT d.id_don AS id, d.id_type AS type_id, t.libelle AS type, d.quantite, d.date_don,
-                    (d.quantite * COALESCE(tp.prix_moyen, 0)) AS valeur_estimee
-             FROM don d
-             LEFT JOIN type_besoin t ON t.id_type = d.id_type
-             LEFT JOIN (
-                SELECT id_type, AVG(prix_unitaire) AS prix_moyen
-                FROM besoin
-                GROUP BY id_type
-             ) tp ON tp.id_type = d.id_type
-             ORDER BY d.date_don DESC, d.id_don DESC"
-        );
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $sql = "SELECT * FROM don WHERE id_don = ?";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function types(): array
+    public function getTypes()
     {
-        $stmt = $this->db->query('SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC');
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $sql = "SELECT id_type AS id, libelle, categorie FROM type_besoin ORDER BY libelle ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create(int $typeId, float $quantite, string $dateDon): int
+    public function create($typeId, $quantite, $dateDon)
     {
-        $stmt = $this->db->prepare('INSERT INTO don (id_type, quantite, date_don) VALUES (:type_id, :quantite, :date_don)');
-        $stmt->execute([
-            ':type_id' => $typeId,
-            ':quantite' => $quantite,
-            ':date_don' => $dateDon,
-        ]);
-        return (int) $this->db->lastInsertId();
+        $sql = "INSERT INTO don (id_type, quantite, date_don) VALUES (?, ?, ?)";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$typeId, $quantite, $dateDon]);
     }
 
-    public function update(int $id, int $typeId, float $quantite, string $dateDon): bool
+    public function update($id, $typeId, $quantite, $dateDon)
     {
-        $stmt = $this->db->prepare('UPDATE don SET id_type = :type_id, quantite = :quantite, date_don = :date_don WHERE id_don = :id');
-        return $stmt->execute([
-            ':id' => $id,
-            ':type_id' => $typeId,
-            ':quantite' => $quantite,
-            ':date_don' => $dateDon,
-        ]);
+        $sql = "UPDATE don SET id_type = ?, quantite = ?, date_don = ? WHERE id_don = ?";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$typeId, $quantite, $dateDon, $id]);
     }
 
-    public function delete(int $id): bool
+    public function delete($id)
     {
-        $stmt = $this->db->prepare('DELETE FROM don WHERE id_don = :id');
-        return $stmt->execute([':id' => $id]);
+        $sql = "DELETE FROM don WHERE id_don = ?";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$id]);
     }
 }
+?>

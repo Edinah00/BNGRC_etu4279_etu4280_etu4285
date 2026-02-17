@@ -1,65 +1,297 @@
-const state = { besoins: [], villes: [], types: [], editing: null, filterVille: 'all', filterType: 'all' };
-const elements = {
-  addBtn: document.getElementById('addBtn'), modalOverlay: document.getElementById('modalOverlay'), modalClose: document.getElementById('modalClose'), cancelBtn: document.getElementById('cancelBtn'), saveBtn: document.getElementById('saveBtn'), modalTitle: document.getElementById('modalTitle'), tableBody: document.getElementById('tableBody'),
-  filterVille: document.getElementById('filterVille'), filterType: document.getElementById('filterType'), inputVille: document.getElementById('inputVille'), inputType: document.getElementById('inputType'), inputDescription: document.getElementById('inputDescription'), inputQuantite: document.getElementById('inputQuantite'), inputPrix: document.getElementById('inputPrix')
+var state = { besoins: [], villes: [], types: [], editing: null, filterVille: 'all', filterType: 'all' };
+var elements = {
+  addBtn: document.getElementById('addBtn'),
+  modalOverlay: document.getElementById('modalOverlay'),
+  modalClose: document.getElementById('modalClose'),
+  cancelBtn: document.getElementById('cancelBtn'),
+  saveBtn: document.getElementById('saveBtn'),
+  modalTitle: document.getElementById('modalTitle'),
+  tableBody: document.getElementById('tableBody'),
+  filterVille: document.getElementById('filterVille'),
+  filterType: document.getElementById('filterType'),
+  inputVille: document.getElementById('inputVille'),
+  inputType: document.getElementById('inputType'),
+  inputDescription: document.getElementById('inputDescription'),
+  inputQuantite: document.getElementById('inputQuantite'),
+  inputPrix: document.getElementById('inputPrix')
 };
 
-function escapeHtml(v){return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function fmt(n){return Number(n||0).toLocaleString('fr-FR');}
-async function api(url, options={}){ const res=await fetch(url,{headers:{'Content-Type':'application/json',Accept:'application/json'},...options}); const payload=await res.json(); if(!res.ok||payload.success===false) throw new Error(payload.message||`HTTP ${res.status}`); return payload; }
-function openModal(){ elements.modalOverlay.classList.add('active'); }
-function closeModal(){ elements.modalOverlay.classList.remove('active'); state.editing=null; elements.modalTitle.textContent='Ajouter un besoin'; elements.inputVille.value=''; elements.inputType.value=''; elements.inputDescription.value=''; elements.inputQuantite.value=''; elements.inputPrix.value=''; }
+function fmt(n){
+    return Number(n||0).toLocaleString('fr-FR');
+}
+
+function openModal(){
+    elements.modalOverlay.classList.add('active');
+}
+
+function closeModal(){
+    elements.modalOverlay.classList.remove('active');
+    state.editing = null;
+    elements.modalTitle.textContent = 'Ajouter un besoin';
+    elements.inputVille.value = '';
+    elements.inputType.value = '';
+    elements.inputDescription.value = '';
+    elements.inputQuantite.value = '';
+    elements.inputPrix.value = '';
+}
 
 function populateSelects(){
-  const villeOpts = state.villes.map((v)=>`<option value="${v.id}">${escapeHtml(v.nom)}</option>`).join('');
-  const typeOpts = state.types.map((t)=>`<option value="${t.id}">${escapeHtml(t.libelle)}</option>`).join('');
-  elements.inputVille.innerHTML = `<option value="">Selectionner</option>${villeOpts}`;
-  elements.filterVille.innerHTML = `<option value="all">Toutes les villes</option>${villeOpts}`;
-  elements.inputType.innerHTML = typeOpts;
-  elements.filterType.innerHTML = `<option value="all">Tous les types</option>${typeOpts}`;
+    elements.inputVille.textContent = '';
+    elements.filterVille.textContent = '';
+    elements.inputType.textContent = '';
+    elements.filterType.textContent = '';
+    
+    var defaultVilleOpt = document.createElement('option');
+    defaultVilleOpt.value = '';
+    defaultVilleOpt.textContent = 'Selectionner';
+    elements.inputVille.appendChild(defaultVilleOpt);
+    
+    var allVillesOpt = document.createElement('option');
+    allVillesOpt.value = 'all';
+    allVillesOpt.textContent = 'Toutes les villes';
+    elements.filterVille.appendChild(allVillesOpt);
+    
+    for (var i = 0; i < state.villes.length; i++) {
+        var v = state.villes[i];
+        var opt1 = document.createElement('option');
+        opt1.value = v.id;
+        opt1.textContent = v.nom;
+        elements.inputVille.appendChild(opt1);
+        
+        var opt2 = document.createElement('option');
+        opt2.value = v.id;
+        opt2.textContent = v.nom;
+        elements.filterVille.appendChild(opt2);
+    }
+    
+    var allTypesOpt = document.createElement('option');
+    allTypesOpt.value = 'all';
+    allTypesOpt.textContent = 'Tous les types';
+    elements.filterType.appendChild(allTypesOpt);
+    
+    for (var i = 0; i < state.types.length; i++) {
+        var t = state.types[i];
+        var opt1 = document.createElement('option');
+        opt1.value = t.id;
+        opt1.textContent = t.libelle;
+        elements.inputType.appendChild(opt1);
+        
+        var opt2 = document.createElement('option');
+        opt2.value = t.id;
+        opt2.textContent = t.libelle;
+        elements.filterType.appendChild(opt2);
+    }
 }
 
 function filtered(){
-  return state.besoins.filter((b)=> (state.filterVille==='all'||String(b.ville_id)===state.filterVille) && (state.filterType==='all'||String(b.type_id)===state.filterType));
+    var result = [];
+    for (var i = 0; i < state.besoins.length; i++) {
+        var b = state.besoins[i];
+        var matchVille = state.filterVille === 'all' || String(b.ville_id) === state.filterVille;
+        var matchType = state.filterType === 'all' || String(b.type_id) === state.filterType;
+        if (matchVille && matchType) {
+            result.push(b);
+        }
+    }
+    return result;
 }
 
 function renderTable(){
-  const rows = filtered();
-  if(!rows.length){ elements.tableBody.innerHTML='<tr><td colspan="7" class="empty-row">Aucun besoin</td></tr>'; return; }
-  elements.tableBody.innerHTML = rows.map((b)=>`<tr><td>${escapeHtml(b.ville||'—')}</td><td>${escapeHtml(b.type||'—')}</td><td>${escapeHtml(b.description||'')}</td><td>${fmt(b.quantite)}</td><td>${fmt(b.prix_unitaire)} Ar</td><td style="font-weight:600;">${fmt(Number(b.quantite)*Number(b.prix_unitaire))} Ar</td><td><div class="action-buttons"><button class="action-btn edit-btn" data-id="${b.id}">Edit</button><button class="action-btn delete-btn delete" data-id="${b.id}">Del</button></div></td></tr>`).join('');
-  document.querySelectorAll('.edit-btn').forEach((btn)=>btn.addEventListener('click',()=>{ const b=state.besoins.find((x)=>String(x.id)===btn.dataset.id); if(!b) return; state.editing=b; elements.modalTitle.textContent='Modifier un besoin'; elements.inputVille.value=b.ville_id; elements.inputType.value=b.type_id; elements.inputDescription.value=b.description; elements.inputQuantite.value=b.quantite; elements.inputPrix.value=b.prix_unitaire; openModal(); }));
-  document.querySelectorAll('.delete-btn').forEach((btn)=>btn.addEventListener('click',async()=>{ if(!confirm('Supprimer ce besoin ?')) return; try{ await api(`/api/besoins/${btn.dataset.id}`,{method:'DELETE'}); await loadData(); }catch(e){alert(e.message);} }));
+    var rows = filtered();
+    elements.tableBody.textContent = '';
+    
+    if(rows.length === 0){
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 7;
+        td.className = 'empty-row';
+        td.textContent = 'Aucun besoin';
+        tr.appendChild(td);
+        elements.tableBody.appendChild(tr);
+        return;
+    }
+    
+    for (var i = 0; i < rows.length; i++) {
+        var b = rows[i];
+        var tr = document.createElement('tr');
+        
+        var tdVille = document.createElement('td');
+        tdVille.textContent = b.ville || '—';
+        
+        var tdType = document.createElement('td');
+        tdType.textContent = b.type || '—';
+        
+        var tdDesc = document.createElement('td');
+        tdDesc.textContent = b.description || '';
+        
+        var tdQte = document.createElement('td');
+        tdQte.textContent = fmt(b.quantite);
+        
+        var tdPrix = document.createElement('td');
+        tdPrix.textContent = fmt(b.prix_unitaire) + ' Ar';
+        
+        var tdTotal = document.createElement('td');
+        tdTotal.style.fontWeight = '600';
+        tdTotal.textContent = fmt(Number(b.quantite)*Number(b.prix_unitaire)) + ' Ar';
+        
+        var tdActions = document.createElement('td');
+        var divActions = document.createElement('div');
+        divActions.className = 'action-buttons';
+        
+        var btnEdit = document.createElement('button');
+        btnEdit.className = 'action-btn edit-btn';
+        btnEdit.dataset.id = b.id;
+        btnEdit.textContent = 'Edit';
+        btnEdit.addEventListener('click', function() {
+            var besoinId = this.dataset.id;
+            var besoin = null;
+            for (var j = 0; j < state.besoins.length; j++) {
+                if (String(state.besoins[j].id) === besoinId) {
+                    besoin = state.besoins[j];
+                    break;
+                }
+            }
+            if (!besoin) return;
+            state.editing = besoin;
+            elements.modalTitle.textContent = 'Modifier un besoin';
+            elements.inputVille.value = besoin.ville_id;
+            elements.inputType.value = besoin.type_id;
+            elements.inputDescription.value = besoin.description;
+            elements.inputQuantite.value = besoin.quantite;
+            elements.inputPrix.value = besoin.prix_unitaire;
+            openModal();
+        });
+        
+        var btnDelete = document.createElement('button');
+        btnDelete.className = 'action-btn delete-btn delete';
+        btnDelete.dataset.id = b.id;
+        btnDelete.textContent = 'Del';
+        btnDelete.addEventListener('click', function() {
+            if (!confirm('Supprimer ce besoin ?')) return;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', '/api/besoins/' + this.dataset.id, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    loadData();
+                } else {
+                    alert('Erreur lors de la suppression.');
+                }
+            };
+            
+            xhr.send();
+        });
+        
+        divActions.appendChild(btnEdit);
+        divActions.appendChild(btnDelete);
+        tdActions.appendChild(divActions);
+        
+        tr.appendChild(tdVille);
+        tr.appendChild(tdType);
+        tr.appendChild(tdDesc);
+        tr.appendChild(tdQte);
+        tr.appendChild(tdPrix);
+        tr.appendChild(tdTotal);
+        tr.appendChild(tdActions);
+        
+        elements.tableBody.appendChild(tr);
+    }
 }
 
-async function loadData(){
-  const payload = await api('/api/besoins');
-  state.besoins = payload.data?.besoins || [];
-  state.villes = payload.data?.villes || [];
-  state.types = payload.data?.types || [];
-  populateSelects();
-  renderTable();
+function loadData(){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/besoins', true);
+  xhr.setRequestHeader('Accept', 'application/json');
+  
+  xhr.onload = function() {
+      if (xhr.status === 200) {
+          var response = JSON.parse(xhr.responseText);
+          if (response.success && response.data) {
+              state.besoins = response.data.besoins || [];
+              state.villes = response.data.villes || [];
+              state.types = response.data.types || [];
+              populateSelects();
+              renderTable();
+          }
+      }
+  };
+  
+  xhr.send();
 }
 
-async function saveBesoin(){
-  const data={ ville_id:Number(elements.inputVille.value||0), type_id:Number(elements.inputType.value||0), description:elements.inputDescription.value.trim(), quantite:Number(elements.inputQuantite.value||0), prix_unitaire:Number(elements.inputPrix.value||0) };
-  if(!data.ville_id||!data.type_id||!data.description||data.quantite<=0||data.prix_unitaire<0){ alert('Champs invalides'); return; }
-  try{
-    if(state.editing){ await api(`/api/besoins/${state.editing.id}`,{method:'PUT',body:JSON.stringify(data)}); }
-    else { await api('/api/besoins',{method:'POST',body:JSON.stringify(data)}); }
-    closeModal(); await loadData();
-  }catch(e){ alert(e.message); }
+function saveBesoin(){
+  var data = {
+      ville_id: Number(elements.inputVille.value||0),
+      type_id: Number(elements.inputType.value||0),
+      description: elements.inputDescription.value.trim(),
+      quantite: Number(elements.inputQuantite.value||0),
+      prix_unitaire: Number(elements.inputPrix.value||0)
+  };
+  
+  if(!data.ville_id || !data.type_id || !data.description || data.quantite<=0 || data.prix_unitaire<0){
+      alert('Champs invalides');
+      return;
+  }
+  
+  var xhr = new XMLHttpRequest();
+  var method = state.editing ? 'PUT' : 'POST';
+  var url = state.editing ? '/api/besoins/' + state.editing.id : '/api/besoins';
+  
+  xhr.open(method, url, true);
+  xhr.setRequestHeader('Accept', 'application/json');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  
+  xhr.onload = function() {
+      if (xhr.status === 200) {
+          closeModal();
+          loadData();
+      } else {
+          alert('Erreur lors de l enregistrement.');
+      }
+  };
+  
+  xhr.send(JSON.stringify(data));
+}
+
+function onFilterVilleChange(e) {
+    state.filterVille = e.target.value;
+    renderTable();
+}
+
+function onFilterTypeChange(e) {
+    state.filterType = e.target.value;
+    renderTable();
 }
 
 function init(){
-  elements.addBtn?.addEventListener('click',openModal); elements.modalClose?.addEventListener('click',closeModal); elements.cancelBtn?.addEventListener('click',closeModal); elements.saveBtn?.addEventListener('click',saveBesoin);
-  elements.modalOverlay?.addEventListener('click',(e)=>{ if(e.target===elements.modalOverlay) closeModal(); });
-  elements.filterVille?.addEventListener('change',(e)=>{ state.filterVille=e.target.value; renderTable(); });
-  elements.filterType?.addEventListener('change',(e)=>{ state.filterType=e.target.value; renderTable(); });
-  const action = new URLSearchParams(window.location.search).get('action');
+  if (elements.addBtn) elements.addBtn.addEventListener('click',openModal);
+  if (elements.modalClose) elements.modalClose.addEventListener('click',closeModal);
+  if (elements.cancelBtn) elements.cancelBtn.addEventListener('click',closeModal);
+  if (elements.saveBtn) elements.saveBtn.addEventListener('click',saveBesoin);
+  if (elements.modalOverlay) {
+      elements.modalOverlay.addEventListener('click', function(e) {
+          if(e.target === elements.modalOverlay) closeModal();
+      });
+  }
+  if (elements.filterVille) {
+      elements.filterVille.addEventListener('change', onFilterVilleChange);
+  }
+  if (elements.filterType) {
+      elements.filterType.addEventListener('change', onFilterTypeChange);
+  }
+  
+  var action = new URLSearchParams(window.location.search).get('action');
   if (action === 'create') {
     openModal();
   }
-  loadData().catch((e)=>{ elements.tableBody.innerHTML=`<tr><td colspan="7">${escapeHtml(e.message)}</td></tr>`; });
+  
+  loadData();
 }
 
-document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

@@ -1,50 +1,49 @@
 <?php
+namespace app\models;
 
-declare(strict_types=1);
+use Flight;
+use PDO;
 
 class VillesModel
 {
-    private \PDO $db;
-
-    public function __construct(\PDO $db)
+    public function getAll()
     {
-        $this->db = $db;
+        $sql = "SELECT v.id_ville AS id, v.nom, v.id_region, r.nom AS region
+                FROM ville v
+                LEFT JOIN region r ON r.id_region = v.id_region
+                ORDER BY v.nom ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function list(): array
+    public function getRegions()
     {
-        $stmt = $this->db->query(
-            "SELECT v.id_ville AS id, v.nom, v.id_region AS region_id, r.nom AS region
-             FROM ville v
-             LEFT JOIN region r ON r.id_region = v.id_region
-             ORDER BY v.nom ASC"
-        );
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $sql = "SELECT id_region AS id, nom FROM region ORDER BY nom ASC";
+        $stmt = Flight::db()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function regions(): array
+    public function create($nom, $idRegion)
     {
-        $stmt = $this->db->query('SELECT id_region AS id, nom FROM region ORDER BY nom ASC');
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $sql = "INSERT INTO ville (nom, id_region) VALUES (?, ?)";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$nom, $idRegion]);
     }
 
-    public function create(string $nom, int $regionId): int
+    public function update($id, $nom, $idRegion)
     {
-        $stmt = $this->db->prepare('INSERT INTO ville (nom, id_region) VALUES (:nom, :region_id)');
-        $stmt->execute([':nom' => $nom, ':region_id' => $regionId]);
-        return (int) $this->db->lastInsertId();
+        $sql = "UPDATE ville SET nom = ?, id_region = ? WHERE id_ville = ?";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$nom, $idRegion, $id]);
     }
 
-    public function update(int $id, string $nom, int $regionId): bool
+    public function delete($id)
     {
-        $stmt = $this->db->prepare('UPDATE ville SET nom = :nom, id_region = :region_id WHERE id_ville = :id');
-        return $stmt->execute([':nom' => $nom, ':region_id' => $regionId, ':id' => $id]);
-    }
-
-    public function delete(int $id): bool
-    {
-        $stmt = $this->db->prepare('DELETE FROM ville WHERE id_ville = :id');
-        return $stmt->execute([':id' => $id]);
+        $sql = "DELETE FROM ville WHERE id_ville = ?";
+        $stmt = Flight::db()->prepare($sql);
+        return $stmt->execute([$id]);
     }
 }
+?>

@@ -6,17 +6,15 @@ use app\models\DispatchModel;
 use Exception;
 use Flight;
 
-class DispatchController
-{
-    public static function index(): void
-    {
+class DispatchController{
+    public function index(){
         Flight::render('dispatch');
     }
 
-    public static function simulate(): void
-    {
+    public function simulate(){
         try {
-            $dons = DispatchModel::getAvailableDonStates();
+            $model = new DispatchModel();
+            $dons = $model->getDonsDisponibles();
             $draftRows = [];
             $eligibleCitiesByType = [];
             $draftNeedRemainings = [];
@@ -31,7 +29,7 @@ class DispatchController
                 }
 
                 if (!isset($needsByType[$idType])) {
-                    $needsByType[$idType] = DispatchModel::getUnsatisfiedNeedsByType($idType);
+                    $needsByType[$idType] = $model->getBesoinsNonSatisfaits($idType);
                 }
 
                 foreach ($needsByType[$idType] as &$need) {
@@ -76,7 +74,7 @@ class DispatchController
                 unset($need);
 
                 if (!isset($eligibleCitiesByType[$idType])) {
-                    $eligibleCitiesByType[$idType] = DispatchModel::getEligibleCitiesByType($idType);
+                    $eligibleCitiesByType[$idType] = $model->getVillesEligibles($idType);
                 }
             }
 
@@ -86,9 +84,9 @@ class DispatchController
                 }
             }
 
-            $summary = self::buildSummary($draftRows, $dons);
+            $summary = $this->buildSummary($draftRows, $dons);
 
-            self::json([
+            $this->json([
                 'success' => true,
                 'message' => empty($draftRows) ? 'Aucune distribution possible.' : 'Simulation générée en brouillon.',
                 'data' => [
@@ -99,42 +97,44 @@ class DispatchController
                 ],
             ]);
         } catch (Exception $e) {
-            self::json([
+            $this->json([
                 'success' => false,
                 'message' => 'Erreur pendant la simulation: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public static function eligibleCities(string $idType): void
-    {
+    public function eligibleCities(string $idType){
         try {
             $typeId = (int) $idType;
             if ($typeId <= 0) {
-                self::json(['success' => false, 'message' => 'Type invalide.'], 422);
+                $this->json(['success' => false, 'message' => 'Type invalide.'], 422);
                 return;
             }
 
-            $cities = DispatchModel::getEligibleCitiesByType($typeId);
-            self::json([
+            $model = new DispatchModel();
+            $cities = $model->getVillesEligibles($typeId);
+            $this->json([
                 'success' => true,
                 'data' => $cities,
             ]);
         } catch (Exception $e) {
-            self::json([
+            $this->json([
                 'success' => false,
                 'message' => 'Erreur lors du chargement des villes éligibles: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public static function validateDraft(): void
-    {
-        $payload = json_decode(file_get_contents('php://input'), true);
+    public function validateDraft(){
+        $payload = Flight::request()->data->getData();
+        if (!is_array($payload)) {
+            $payload = $_POST;
+        }
         $rows = $payload['distributions'] ?? [];
 
         if (!is_array($rows) || empty($rows)) {
-            self::json([
+            $this->json([
                 'success' => false,
                 'message' => 'Aucune distribution à valider.',
             ], 422);
@@ -149,7 +149,7 @@ class DispatchController
             $quantity = (float) ($row['quantite_proposee'] ?? 0);
 
             if ($idDon <= 0 || $idVille <= 0 || $idType <= 0) {
-                self::json([
+                $this->json([
                     'success' => false,
                     'message' => 'Ligne invalide (don, ville ou type manquant).',
                     'line_index' => $index,
@@ -158,7 +158,7 @@ class DispatchController
             }
 
             if ($quantity < 0) {
-                self::json([
+                $this->json([
                     'success' => false,
                     'message' => 'La quantité ne peut pas être négative.',
                     'line_index' => $index,
@@ -179,7 +179,7 @@ class DispatchController
         }
 
         if (empty($normalizedRows)) {
-            self::json([
+            $this->json([
                 'success' => false,
                 'message' => 'Toutes les lignes sont à 0. Rien à enregistrer.',
             ], 422);
@@ -187,8 +187,9 @@ class DispatchController
         }
 
         try {
+            $model = new DispatchModel();
             $donIds = array_values(array_unique(array_map(static fn($row) => $row['id_don'], $normalizedRows)));
-            $donMap = DispatchModel::getDonRemainingsByIds($donIds);
+            $donMap = $model->getDonRemainingsByIds($donIds);
 
             $cityTypePairs = [];
             foreach ($normalizedRows as $row) {
@@ -198,7 +199,7 @@ class DispatchController
                     'id_type' => $row['id_type'],
                 ];
             }
-            $needMap = DispatchModel::getCityTypeRemainings(array_values($cityTypePairs));
+            $needMap = $model->getCityTypeRemainings(array_values($cityTypePairs));
 
             $donBudget = [];
             foreach ($donMap as $idDon => $state) {
@@ -214,7 +215,7 @@ class DispatchController
                 $quantity = $row['quantite_proposee'];
 
                 if (!isset($donMap[$idDon])) {
-                    self::json([
+                    $this->json([
                         'success' => false,
                         'message' => sprintf('Don #%d introuvable.', $idDon),
                         'line_index' => $index,
@@ -223,7 +224,7 @@ class DispatchController
                 }
 
                 if ((int) $donMap[$idDon]['id_type'] !== $idType) {
-                    self::json([
+                    $this->json([
                         'success' => false,
                         'message' => sprintf('Le don #%d ne correspond pas au type demandé.', $idDon),
                         'line_index' => $index,
@@ -232,7 +233,7 @@ class DispatchController
                 }
 
                 if (($donBudget[$idDon] ?? 0) < $quantity) {
-                    self::json([
+                    $this->json([
                         'success' => false,
                         'message' => sprintf('Quantité insuffisante pour le don #%d.', $idDon),
                         'line_index' => $index,
@@ -242,7 +243,7 @@ class DispatchController
 
                 $needKey = $idVille . '-' . $idType;
                 if (!isset($needBudget[$needKey])) {
-                    self::json([
+                    $this->json([
                         'success' => false,
                         'message' => 'La ville sélectionnée n\'a plus de besoin pour ce type.',
                         'line_index' => $index,
@@ -251,7 +252,7 @@ class DispatchController
                 }
 
                 if ($needBudget[$needKey] < $quantity) {
-                    self::json([
+                    $this->json([
                         'success' => false,
                         'message' => 'Quantité supérieure au besoin restant de la ville.',
                         'line_index' => $index,
@@ -263,17 +264,17 @@ class DispatchController
                 $needBudget[$needKey] -= $quantity;
             }
 
-            DispatchModel::beginTransaction();
+            $model->beginTransaction();
             foreach ($normalizedRows as $row) {
-                DispatchModel::createDistribution(
+                $model->createDistribution(
                     $row['id_don'],
                     $row['id_ville'],
                     $row['quantite_proposee']
                 );
             }
-            DispatchModel::commit();
+            $model->commit();
 
-            self::json([
+            $this->json([
                 'success' => true,
                 'message' => 'Dispatch validé avec succès.',
                 'data' => [
@@ -282,16 +283,17 @@ class DispatchController
                 ],
             ]);
         } catch (Exception $e) {
-            DispatchModel::rollback();
-            self::json([
+            if (isset($model)) {
+                $model->rollback();
+            }
+            $this->json([
                 'success' => false,
                 'message' => 'Erreur lors de la validation: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    private static function buildSummary(array $draftRows, array $dons): array
-    {
+    private function buildSummary(array $draftRows, array $dons){
         $totalQuantity = 0.0;
         $donDistributed = [];
 
@@ -332,8 +334,7 @@ class DispatchController
         ];
     }
 
-    private static function json(array $data, int $statusCode = 200): void
-    {
+    private function json(array $data, int $statusCode = 200){
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
