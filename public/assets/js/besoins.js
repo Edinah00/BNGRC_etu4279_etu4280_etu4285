@@ -103,7 +103,7 @@ function renderTable(){
     if(rows.length === 0){
         var tr = document.createElement('tr');
         var td = document.createElement('td');
-        td.colSpan = 7;
+        td.colSpan = 9;
         td.className = 'empty-row';
         td.textContent = 'Aucun besoin';
         tr.appendChild(td);
@@ -126,6 +126,12 @@ function renderTable(){
         
         var tdQte = document.createElement('td');
         tdQte.textContent = fmt(b.quantite);
+
+        var tdSatisfied = document.createElement('td');
+        tdSatisfied.textContent = fmt(b.quantite_satisfaite);
+
+        var tdRemaining = document.createElement('td');
+        tdRemaining.textContent = fmt(b.quantite_restante);
         
         var tdPrix = document.createElement('td');
         tdPrix.textContent = fmt(b.prix_unitaire) + ' Ar';
@@ -192,6 +198,8 @@ function renderTable(){
         tr.appendChild(tdType);
         tr.appendChild(tdDesc);
         tr.appendChild(tdQte);
+        tr.appendChild(tdSatisfied);
+        tr.appendChild(tdRemaining);
         tr.appendChild(tdPrix);
         tr.appendChild(tdTotal);
         tr.appendChild(tdActions);

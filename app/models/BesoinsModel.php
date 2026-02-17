@@ -9,7 +9,10 @@ class BesoinsModel
     public function getAll($villeId = null, $typeId = null)
     {
         $sql = "SELECT b.id_besoin AS id, b.id_ville, v.nom AS ville, b.id_type,
-                       t.libelle AS type, t.categorie, b.nom_produit, b.quantite, b.prix_unitaire, b.date_saisie
+                       t.libelle AS type, t.categorie, b.nom_produit,
+                       b.quantite, b.quantite_satisfaite,
+                       GREATEST(b.quantite - b.quantite_satisfaite, 0) AS quantite_restante,
+                       b.prix_unitaire, b.date_saisie
                 FROM besoin b
                 LEFT JOIN ville v ON v.id_ville = b.id_ville
                 LEFT JOIN type_besoin t ON t.id_type = b.id_type
@@ -59,16 +62,20 @@ class BesoinsModel
 
     public function create($villeId, $typeId, $nomProduit, $quantite, $prixUnitaire)
     {
-        $sql = "INSERT INTO besoin (id_ville, id_type, nom_produit, quantite, prix_unitaire) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO besoin (id_ville, id_type, nom_produit, quantite, quantite_satisfaite, prix_unitaire)
+                VALUES (?, ?, ?, ?, 0, ?)";
         $stmt = Flight::db()->prepare($sql);
         return $stmt->execute([$villeId, $typeId, $nomProduit, $quantite, $prixUnitaire]);
     }
 
     public function update($id, $villeId, $typeId, $nomProduit, $quantite, $prixUnitaire)
     {
-        $sql = "UPDATE besoin SET id_ville = ?, id_type = ?, nom_produit = ?, quantite = ?, prix_unitaire = ? WHERE id_besoin = ?";
+        $sql = "UPDATE besoin
+                SET id_ville = ?, id_type = ?, nom_produit = ?, quantite = ?,
+                    quantite_satisfaite = LEAST(quantite_satisfaite, ?), prix_unitaire = ?
+                WHERE id_besoin = ?";
         $stmt = Flight::db()->prepare($sql);
-        return $stmt->execute([$villeId, $typeId, $nomProduit, $quantite, $prixUnitaire, $id]);
+        return $stmt->execute([$villeId, $typeId, $nomProduit, $quantite, $quantite, $prixUnitaire, $id]);
     }
 
     public function delete($id)

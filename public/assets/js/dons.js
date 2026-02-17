@@ -47,7 +47,7 @@ function renderTable(){
     if(state.dons.length === 0){
         var tr = document.createElement('tr');
         var td = document.createElement('td');
-        td.colSpan = 5;
+        td.colSpan = 7;
         td.className = 'empty-row';
         td.textContent = 'Aucun don';
         tr.appendChild(td);
@@ -67,6 +67,12 @@ function renderTable(){
         
         var tdQte = document.createElement('td');
         tdQte.textContent = fmt(d.quantite);
+
+        var tdUsed = document.createElement('td');
+        tdUsed.textContent = fmt(d.quantite_utilisee);
+
+        var tdRemain = document.createElement('td');
+        tdRemain.textContent = fmt(d.quantite_restante);
         
         var tdValeur = document.createElement('td');
         tdValeur.style.fontWeight = '600';
@@ -127,6 +133,8 @@ function renderTable(){
         tr.appendChild(tdDate);
         tr.appendChild(tdType);
         tr.appendChild(tdQte);
+        tr.appendChild(tdUsed);
+        tr.appendChild(tdRemain);
         tr.appendChild(tdValeur);
         tr.appendChild(tdActions);
         

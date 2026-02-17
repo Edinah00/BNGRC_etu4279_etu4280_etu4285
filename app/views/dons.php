@@ -31,6 +31,8 @@
                         <th>Date</th>
                         <th>Type</th>
                         <th>Quantité</th>
+                        <th>Déjà utilisé</th>
+                        <th>Restant</th>
                         <th>Valeur estimee</th>
                         <th class="actions-column">Actions</th>
                     </tr>

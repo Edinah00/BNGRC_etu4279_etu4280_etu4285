@@ -9,7 +9,10 @@ class DonsModel
     public function getAll()
     {
         $sql = "SELECT d.id_don AS id, d.id_type, t.libelle AS type, t.categorie,
-                       d.quantite, d.date_don,
+                       d.id_type AS type_id,
+                       d.quantite, d.quantite_utilisee,
+                       GREATEST(d.quantite - d.quantite_utilisee, 0) AS quantite_restante,
+                       d.date_don,
                        (d.quantite * COALESCE(p.prix_moyen, 0)) AS valeur_estimee
                 FROM don d
                 LEFT JOIN type_besoin t ON t.id_type = d.id_type
@@ -42,16 +45,18 @@ class DonsModel
 
     public function create($typeId, $quantite, $dateDon)
     {
-        $sql = "INSERT INTO don (id_type, quantite, date_don) VALUES (?, ?, ?)";
+        $sql = "INSERT INTO don (id_type, quantite, quantite_utilisee, date_don) VALUES (?, ?, 0, ?)";
         $stmt = Flight::db()->prepare($sql);
         return $stmt->execute([$typeId, $quantite, $dateDon]);
     }
 
     public function update($id, $typeId, $quantite, $dateDon)
     {
-        $sql = "UPDATE don SET id_type = ?, quantite = ?, date_don = ? WHERE id_don = ?";
+        $sql = "UPDATE don
+                SET id_type = ?, quantite = ?, quantite_utilisee = LEAST(quantite_utilisee, ?), date_don = ?
+                WHERE id_don = ?";
         $stmt = Flight::db()->prepare($sql);
-        return $stmt->execute([$typeId, $quantite, $dateDon, $id]);
+        return $stmt->execute([$typeId, $quantite, $quantite, $dateDon, $id]);
     }
 
     public function delete($id)

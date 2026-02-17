@@ -48,6 +48,8 @@
                         <th>Type</th>
                         <th>Description</th>
                         <th>Quantité</th>
+                        <th>Déjà satisfait</th>
+                        <th>Restant</th>
                         <th>Prix unit.</th>
                         <th>Total</th>
                         <th class="actions-column">Actions</th>
