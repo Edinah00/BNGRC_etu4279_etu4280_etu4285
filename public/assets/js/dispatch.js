@@ -7,7 +7,6 @@ var state = {
 };
 
 var elements = {
-    simulateBtn: document.getElementById('simulateBtn'),
     validateBtn: document.getElementById('validateBtn'),
     resetDataBtn: document.getElementById('resetDataBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
@@ -21,7 +20,7 @@ var elements = {
     toast: document.getElementById('toast'),
     toastTitle: document.getElementById('toastTitle'),
     toastDescription: document.getElementById('toastDescription'),
-    modeInputs: document.querySelectorAll('input[name="mode_dispatch"]')
+    modeButtons: document.querySelectorAll('[data-mode-dispatch]')
 };
 
 function setValidateVisible(visible) {
@@ -68,13 +67,16 @@ function apiUrl(path) {
     return base + cleanPath;
 }
 
-function getSelectedMode() {
-    for (var i = 0; i < elements.modeInputs.length; i++) {
-        if (elements.modeInputs[i].checked) {
-            return elements.modeInputs[i].value;
+function setActiveModeButton(mode) {
+    for (var i = 0; i < elements.modeButtons.length; i++) {
+        var btn = elements.modeButtons[i];
+        var btnMode = btn.getAttribute('data-mode-dispatch');
+        if (btnMode === mode) {
+            btn.classList.add('is-active');
+        } else {
+            btn.classList.remove('is-active');
         }
     }
-    return 'fifo';
 }
 
 function getUsedDonQuantities() {
@@ -612,8 +614,11 @@ function rerenderDraft() {
     showSimulationResults();
 }
 
-function handleSimulate() {
-    state.modeDispatch = getSelectedMode();
+function handleSimulate(mode) {
+    if (mode) {
+        state.modeDispatch = mode;
+    }
+    setActiveModeButton(state.modeDispatch);
 
     var xhr = new XMLHttpRequest();
     xhr.open('GET', apiUrl('api/dispatch/simulate?mode_dispatch=' + encodeURIComponent(state.modeDispatch)), true);
@@ -857,11 +862,23 @@ function onTableClick(event) {
     }
 }
 
+function onModeButtonClick(event) {
+    var btn = event.currentTarget;
+    var mode = btn.getAttribute('data-mode-dispatch');
+    if (!mode) {
+        return;
+    }
+    handleSimulate(mode);
+}
+
 function init() {
     showEmptyState();
+    setActiveModeButton(state.modeDispatch);
 
-    if (elements.simulateBtn) {
-        elements.simulateBtn.addEventListener('click', handleSimulate);
+    if (elements.modeButtons && elements.modeButtons.length > 0) {
+        for (var i = 0; i < elements.modeButtons.length; i++) {
+            elements.modeButtons[i].addEventListener('click', onModeButtonClick);
+        }
     }
     if (elements.validateBtn) {
         elements.validateBtn.addEventListener('click', handleValidate);

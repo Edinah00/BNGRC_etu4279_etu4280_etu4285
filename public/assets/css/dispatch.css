@@ -20,39 +20,55 @@
     margin-bottom: var(--spacing-xl);
 }
 
-.mode-card {
-    background: #ffffff;
-    border: 1px solid rgba(12, 43, 78, 0.2);
+.mode-button {
+    position: relative;
+    background: linear-gradient(145deg, #2a6f90 0%, #1a4f78 100%);
+    border: 2px solid rgba(12, 43, 78, 0.45);
     border-radius: var(--border-radius-md);
-    padding: 0.85rem 1rem;
+    padding: 0.95rem 1rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+    text-align: left;
+    box-shadow: 0 6px 18px rgba(12, 43, 78, 0.28);
 }
 
-.mode-card:hover {
-    border-color: var(--color-accent);
-    box-shadow: 0 4px 16px rgba(12, 43, 78, 0.12);
+.mode-button:hover {
+    border-color: #4aa3df;
+    box-shadow: 0 12px 26px rgba(12, 43, 78, 0.34);
+    transform: translateY(-2px);
+    background: linear-gradient(145deg, #3380a6 0%, #215f90 100%);
 }
 
-.mode-card input {
-    margin-right: 0.45rem;
+.mode-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(12, 43, 78, 0.12);
 }
 
-.mode-card input:checked + .mode-content {
-    color: var(--color-primary);
+.mode-button.is-active {
+    border-color: #66c2ff;
+    box-shadow: 0 0 0 4px rgba(102, 194, 255, 0.3), 0 14px 28px rgba(12, 43, 78, 0.38);
+    background: linear-gradient(145deg, #3e95bf 0%, #2b72a8 100%);
 }
 
-.mode-card:has(input:checked) {
-    border-color: var(--color-accent);
-    box-shadow: 0 6px 20px rgba(41, 128, 185, 0.18);
+.mode-button-priorite.is-active {
+    border-color: #6bf2a3;
+    background: linear-gradient(145deg, #40b777 0%, #2f935e 100%);
+    box-shadow: 0 0 0 4px rgba(107, 242, 163, 0.28), 0 14px 28px rgba(31, 127, 73, 0.35);
 }
 
-#card-priorite-petits:has(input:checked) {
-    border-color: #27AE60;
-    background: rgba(39, 174, 96, 0.05);
+.mode-button .mode-title,
+.mode-button .mode-desc {
+    display: block;
 }
 
-.mode-content {
+.mode-button:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 0 4px rgba(41, 128, 185, 0.2), 0 8px 20px rgba(12, 43, 78, 0.14);
+}
+
+.mode-selector .mode-content,
+.mode-button {
     display: inline-flex;
     flex-direction: column;
     gap: 0.2rem;
@@ -60,14 +76,17 @@
 
 .mode-title {
     font-family: var(--font-display);
-    color: var(--color-primary);
+    color: #ffffff;
     font-weight: 700;
+    letter-spacing: 0.25px;
 }
 
 .mode-desc {
-    color: var(--color-secondary);
-    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.86rem;
+    opacity: 1;
 }
+
 
 .header-content {
     display: flex;

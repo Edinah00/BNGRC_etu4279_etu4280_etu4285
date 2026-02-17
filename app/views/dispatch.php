@@ -5,9 +5,6 @@
                     <p class="page-description">Distribution des dons selon les besoins non satisfaits (FIFO, proportionnel ou priorité petits)</p>
                 </div>
                 <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-                    <button class="btn-primary" id="simulateBtn" type="button">
-                        <span>Simuler le dispatch automatique</span>
-                    </button>
                     <button class="btn-success" id="validateBtn" type="button" style="display:none;">Valider et enregistrer</button>
                     <button class="btn-primary" id="resetDataBtn" type="button" style="background:#b03a2e;">Réinitialiser besoins/dons</button>
                 </div>
@@ -15,36 +12,27 @@
         </header>
 
         <section class="mode-selector" id="modeSelector">
-            <label class="mode-card" for="modeFifo">
-                <input type="radio" name="mode_dispatch" id="modeFifo" value="fifo" checked>
-                <div class="mode-content">
-                    <span class="mode-title">FIFO</span>
-                    <span class="mode-desc">Premier arrivé, premier servi</span>
-                </div>
-            </label>
+            <button class="mode-button is-active" type="button" data-mode-dispatch="fifo">
+                <span class="mode-title">FIFO</span>
+                <span class="mode-desc">Premier arrivé, premier servi</span>
+            </button>
 
-            <label class="mode-card" for="modeProportionnel">
-                <input type="radio" name="mode_dispatch" id="modeProportionnel" value="proportionnel">
-                <div class="mode-content">
-                    <span class="mode-title">Proportionnel</span>
-                    <span class="mode-desc">Répartition selon le ratio de besoin restant</span>
-                </div>
-            </label>
+            <button class="mode-button" type="button" data-mode-dispatch="proportionnel">
+                <span class="mode-title">Proportionnel</span>
+                <span class="mode-desc">Répartition selon le ratio de besoin restant</span>
+            </button>
 
-            <label class="mode-card" id="card-priorite-petits" for="modePrioritePetits">
-                <input type="radio" name="mode_dispatch" id="modePrioritePetits" value="priorite_petits">
-                <div class="mode-content">
-                    <span class="mode-title">Priorité Petits</span>
-                    <span class="mode-desc">Les plus petits besoins sont satisfaits en premier</span>
-                </div>
-            </label>
+            <button class="mode-button mode-button-priorite" type="button" data-mode-dispatch="priorite_petits">
+                <span class="mode-title">Priorité Petits</span>
+                <span class="mode-desc">Les plus petits besoins sont satisfaits en premier</span>
+            </button>
         </section>
 
         <section class="empty-state" id="emptyState">
             <div class="empty-state-card">
                 <div class="empty-state-content">
-                    <h2 class="empty-state-title">Cliquez sur "Simuler" pour lancer la distribution</h2>
-                    <p class="empty-state-text">Sélectionnez un mode puis lancez la simulation.</p>
+                    <h2 class="empty-state-title">Choisissez un mode pour lancer la distribution</h2>
+                    <p class="empty-state-text">Chaque bouton de mode démarre directement une simulation.</p>
                 </div>
             </div>
         </section>
